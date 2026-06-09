@@ -1,0 +1,13 @@
+A prompt manager is a tool or system used to organize, store, version, and optimize instructions used for interacting with Large Language Models (LLMs). These tools help teams and individuals maintain consistency, track changes, and easily reuse high-quality commands across different AI applications and chatbots.
+
+Technology Stack:   Front End (HTML, CSS, JS, JQuery, Bootstrap)
+                    Server (PHP)
+                    Backend (MySQL)
+
+Scope: 1. Managing the prompts for the IMAGES.
+       2. Comparitive Evaluation of different models with the same prompt
+       3. Given a image, try to generate a prompt
+       4. Given a prompt (and a model), generate an image
+      5. Empower the users to create, save, update, delete, version the prompts
+
+

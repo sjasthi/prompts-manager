@@ -1,13 +1,54 @@
-A prompt manager is a tool or system used to organize, store, version, and optimize instructions used for interacting with Large Language Models (LLMs). These tools help teams and individuals maintain consistency, track changes, and easily reuse high-quality commands across different AI applications and chatbots.
+# Prompt Manager – Project Requirements
 
-Technology Stack:   Front End (HTML, CSS, JS, JQuery, Bootstrap)
-                    Server (PHP)
-                    Backend (MySQL)
+## Introduction
 
-Scope: 1. Managing the prompts for the IMAGES.
-       2. Comparitive Evaluation of different models with the same prompt
-       3. Given a image, try to generate a prompt
-       4. Given a prompt (and a model), generate an image
-      5. Empower the users to create, save, update, delete, version the prompts
+A **Prompt Manager** is a tool used to organize, store, version, and optimize instructions for interacting with Large Language Models (LLMs). This system focuses specifically on **image-based prompts**, enabling users to create, evaluate, and refine prompts that generate or describe images across different AI models. It helps teams and individuals maintain consistency, track changes, and reuse high-quality prompts across various AI applications.
 
+Built using **HTML, CSS, JS, jQuery, and Bootstrap** on the front end, **PHP** on the server, and **MySQL** as the backend database, the Prompt Manager provides a structured and scalable environment for prompt lifecycle management.
 
+---
+
+## Technology Stack
+
+| Layer      | Technology                          |
+|------------|-------------------------------------|
+| Front End  | HTML, CSS, JavaScript, jQuery, Bootstrap |
+| Server     | PHP                                 |
+| Backend    | MySQL                               |
+
+---
+
+## Scope
+
+1. Managing prompts specifically for **images**
+2. **Comparative evaluation** of different AI models using the same prompt
+3. Given an **image**, generate a corresponding prompt
+4. Given a **prompt and model**, generate an image
+5. Empower users to **create, save, update, delete, and version** their prompts
+
+---
+
+## Stakeholders & User Roles
+
+| Role             | Status      | Description                                                                 |
+|------------------|-------------|-----------------------------------------------------------------------------|
+| Admin            | Active      | Full system access — manages users, oversees all prompts, configures models |
+| Registered User  | Active      | Can create, save, update, delete, and version prompts; run evaluations      |
+| Guest            | Future (v2) | Read-only access; can view prompts but cannot save or generate              |
+
+### Admin
+- Manages all user accounts and permissions
+- Has access to all prompts across all users
+- Configures available AI models for comparison and image generation
+- Monitors system usage and maintains data integrity
+
+### Registered User
+- Creates, saves, updates, deletes, and versions their own prompts
+- Submits prompts to generate images (given a selected model)
+- Uploads images to auto-generate a corresponding prompt
+- Runs comparative evaluations of the same prompt across different models
+
+### Guest *(planned for future release)*
+- Limited browsing access to public or shared prompts
+- Cannot create, save, or generate — view only
+- Serves as an entry point to encourage account registration

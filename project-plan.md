@@ -7,7 +7,9 @@
 * Design application layout and navigation
 * Create repository structure
 * Create starter index.php page
-* Database Design - Draft
+* Web site design per the code structure - All the placeholders are in place (when users click a link, you simply get a message "not done")
+* Once you have the complete layout of the website, you can then decide the breakup of the workload.
+
 
 ## FP4 - Database Design - Final
 

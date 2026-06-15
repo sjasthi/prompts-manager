@@ -7,14 +7,17 @@
 * Design application layout and navigation
 * Create repository structure
 * Create starter index.php page
+* Database Design - Draft
 
-## FP4 - Database Design
+## FP4 - Database Design - Final
 
 * Design MySQL schema
 * Create prompts table
 * Create prompt_versions table
 * Create generated_images table
 * Test database connectivity
+* Load some sample data into the database through PhpMyAdmin
+* Ensure that your index.php and other "read-only" pages are fetching the data from this dummy database tables.
 
 ## FP5 - Prompt Management
 

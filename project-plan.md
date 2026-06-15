@@ -57,6 +57,7 @@
 * Final presentation preparation
 
 ## Team Responsibilities
+## (haven't decided roles yet)
 
 ### Team Member 1
 
@@ -70,3 +71,5 @@
 * PHP backend
 * CRUD functionality
 * Versioning system
+
+### Team Member 3?

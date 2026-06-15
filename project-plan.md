@@ -57,7 +57,7 @@
 * Final presentation preparation
 
 ## Team Responsibilities
-## (haven't decided roles yet)
+### (haven't decided roles yet)
 
 ### Team Member 1
 

@@ -1,4 +1,11 @@
 <?php
+require_once 'includes/database.php';
+$conn = getConnection();
+
+$result = $conn->query("SELECT COUNT(*) as total FROM prompts");
+$row = $result->fetch_assoc();
+$promptCount = $row['total'];
+$conn->close();
 $pageTitle = "Image Prompt Manager";
 
 $sections = [
@@ -96,9 +103,12 @@ $sections = [
     </div>
 
     <!-- Footer note -->
-    <p class="text-center text-muted small mt-5">
-        ICS499 Capstone Project &mdash; Image Prompt Manager &mdash; Phase 3
-    </p>
+<p class="text-center text-muted small mt-5">
+    ICS499 Capstone Project &mdash; Image Prompt Manager &mdash; Phase 3
+</p>
+<p class="text-center text-muted">
+    📦 <?php echo $promptCount; ?> prompts currently in the library.
+</p>
 
 </div>
 

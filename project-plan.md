@@ -61,20 +61,3 @@
 * Documentation updates
 * Final presentation preparation
 
-## Team Responsibilities
-### (haven't decided roles yet)
-
-### Team Member 1
-
-* Frontend development
-* User interface design
-* API integration
-
-### Team Member 2
-
-* Database development
-* PHP backend
-* CRUD functionality
-* Versioning system
-
-### Team Member 3?

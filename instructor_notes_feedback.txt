@@ -1,1 +1,3 @@
 6/15 FP3 - the complete skeleton website / layout is ready.
+6/22 FP4 - UI is looking good.
+Update the weekly plan to have "tile" (ui) mapped to "student" so that each student works on the full-stack.

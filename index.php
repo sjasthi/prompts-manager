@@ -26,12 +26,12 @@ $sections = [
         "badge_class" => "bg-warning text-dark",
     ],
     [
-        "href"        => "#",
+        "href"        => "generate.php",
         "icon"        => "🎨",
         "title"       => "Generate Image",
-        "desc"        => "Select a prompt and an AI model (DALL·E, Stable Diffusion, etc.) to generate an image instantly.",
-        "status"      => "Coming Soon",
-        "badge_class" => "bg-secondary",
+        "desc"        => "Select a prompt and an AI model to generate images instantly.",
+        "status"      => "Active",
+        "badge_class" => "bg-success",
     ],
     [
         "href"        => "#",

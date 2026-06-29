@@ -1,4 +1,4 @@
-CREATE DATABASE IF NOT EXISTS prompt_manager;
+    CREATE DATABASE IF NOT EXISTS prompt_manager;
 USE prompt_manager;
 
 CREATE TABLE prompts (

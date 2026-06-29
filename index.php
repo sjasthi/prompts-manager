@@ -10,7 +10,7 @@ $pageTitle = "Image Prompt Manager";
 
 $sections = [
     [
-        "href"        => "#",
+        "href"        => "pages/prompts.php",
         "icon"        => "📚",
         "title"       => "Prompt Library",
         "desc"        => "Browse, search, and manage all your saved image prompts. Filter by tag, category, or model.",
@@ -107,7 +107,7 @@ $sections = [
     ICS499 Capstone Project &mdash; Image Prompt Manager &mdash; Phase 3
 </p>
 <p class="text-center text-muted">
-    📦 <?php echo $promptCount; ?> prompts currently in the library.
+    📦 <?php echo $promptCount; ?> prompts currently in the library
 </p>
 
 </div>

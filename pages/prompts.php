@@ -5,7 +5,7 @@ require_once '../includes/config.php';
 $conn = getConnection();
 $editPrompt = null;
 $message = '';
-
+$search = isset($_GET['search']) ? trim($_GET['search']) : '';
 // Handle DELETE
 if (isset($_GET['delete'])) {
     $id = (int) $_GET['delete'];
@@ -82,9 +82,17 @@ if (isset($_GET['msg'])) {
         </div>";
     }
 }
+$searchSql = "";
 
+if ($search != "") {
+    $safeSearch = $conn->real_escape_string($search);
+    $searchSql = " AND (title LIKE '%$safeSearch%'
+                   OR prompt_text LIKE '%$safeSearch%'
+                   OR category LIKE '%$safeSearch%'
+                   OR tags LIKE '%$safeSearch%')";
+}
 // Fetch all prompts
-$prompts = $conn->query("SELECT * FROM prompts WHERE status = 'active' ORDER BY created_at DESC");
+$prompts = $conn->query("SELECT * FROM prompts WHERE status = 'active' $searchSql ORDER BY created_at DESC");
 $conn->close();
 ?>
 <!DOCTYPE html>
@@ -164,6 +172,16 @@ $conn->close();
     <!-- PROMPT LIST -->
     <?php if (!$editPrompt): ?>
     <h5 class="fw-semibold mb-3">Saved Prompts</h5>
+  <form method="GET" action="prompts.php" class="mb-3">
+      <div class="input-group">
+          <input type="text" name="search" class="form-control"
+                 placeholder="Search by title, category, tags, or prompt text"
+                 value="<?php echo htmlspecialchars($search); ?>">
+          <button class="btn btn-primary" type="submit">Search</button>
+          <a href="prompts.php" class="btn btn-outline-secondary">Clear</a>
+      </div>
+  </form>
+
     <?php if ($prompts && $prompts->num_rows > 0): ?>
     <div class="table-responsive">
         <table class="table table-hover align-middle bg-white shadow-sm rounded">

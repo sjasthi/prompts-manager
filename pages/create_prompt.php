@@ -6,6 +6,47 @@ $conn = getConnection();
 $editPrompt = null;
 $message = '';
 
+// Handle RESTORE
+if (isset($_GET['restore']) && isset($_GET['prompt_id'])) {
+    $promptId  = (int) $_GET['prompt_id'];
+    $versionId = (int) $_GET['restore'];
+
+    // Get the version text to restore
+    $vResult = $conn->query("SELECT * FROM prompt_versions WHERE version_id = $versionId AND prompt_id = $promptId");
+    $version = $vResult->fetch_assoc();
+
+    if ($version) {
+        $restoredText = $conn->real_escape_string($version['version_text']);
+
+        // Update the prompt with restored text and increment version number
+        $conn->query("
+            UPDATE prompts
+            SET prompt_text = '$restoredText',
+                version_number = version_number + 1,
+                updated_at = NOW()
+            WHERE prompt_id = $promptId
+        ");
+
+        // Log the restore as a new version
+        $conn->query("
+            INSERT INTO prompt_versions (prompt_id, version_number, version_text)
+            VALUES ($promptId, (SELECT version_number FROM prompts WHERE prompt_id = $promptId), '$restoredText')
+        ");
+
+        header("Location: create_prompt.php?edit=$promptId&msg=restored");
+        exit;
+    }
+}
+
+// Handle VERSION DELETE
+if (isset($_GET['delete_version'])) {
+    $versionId = (int) $_GET['delete_version'];
+    $promptId  = (int) $_GET['prompt_id'];
+    $conn->query("DELETE FROM prompt_versions WHERE version_id = $versionId");
+    header("Location: create_prompt.php?edit=$promptId&msg=version_deleted");
+    exit;
+}
+
 // Handle CREATE or UPDATE
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $title       = $conn->real_escape_string(trim($_POST['title']));
@@ -30,7 +71,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             VALUES ($id, (SELECT version_number FROM prompts WHERE prompt_id = $id), '$prompt_text')
         ");
 
-        header("Location: create_prompt.php?msg=updated");
+        header("Location: create_prompt.php?edit=$id&msg=updated");
     } else {
         // INSERT new prompt
         $conn->query("
@@ -57,11 +98,26 @@ if (isset($_GET['edit'])) {
     $editPrompt = $result->fetch_assoc();
 }
 
+// Load version history if editing
+$versions = [];
+if ($editPrompt) {
+    $vResult = $conn->query("
+        SELECT * FROM prompt_versions
+        WHERE prompt_id = {$editPrompt['prompt_id']}
+        ORDER BY version_number DESC
+    ");
+    while ($v = $vResult->fetch_assoc()) {
+        $versions[] = $v;
+    }
+}
+
 // Flash messages
 if (isset($_GET['msg'])) {
     $msgs = [
-        'created' => ['success', 'Prompt created successfully.'],
-        'updated' => ['success', 'Prompt updated successfully.'],
+        'created'  => ['success', 'Prompt created successfully.'],
+        'updated'  => ['success', 'Prompt updated successfully.'],
+        'restored'        => ['info',    'Previous version restored successfully.'],
+        'version_deleted' => ['warning', 'Version deleted.'],
     ];
     if (isset($msgs[$_GET['msg']])) {
         [$type, $text] = $msgs[$_GET['msg']];
@@ -146,6 +202,59 @@ $conn->close();
             </form>
         </div>
     </div>
+
+    <!-- VERSION HISTORY (only shown when editing) -->
+    <?php if ($editPrompt && count($versions) > 0): ?>
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-body">
+            <h5 class="card-title mb-3">🕓 Version History</h5>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Version</th>
+                            <th>Prompt Text</th>
+                            <th>Saved On</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($versions as $index => $v): ?>
+                        <tr <?php echo $index === 0 ? 'class="table-success"' : ''; ?>>
+                            <td>
+                                <span class="badge bg-info text-dark">v<?php echo $v['version_number']; ?></span>
+                                <?php echo $index === 0 ? '<span class="badge bg-success ms-1">Current</span>' : ''; ?>
+                            </td>
+                            <td class="text-muted small" style="max-width: 400px;">
+                                <?php echo htmlspecialchars(substr($v['version_text'], 0, 120)) . (strlen($v['version_text']) > 120 ? '...' : ''); ?>
+                            </td>
+                            <td class="text-muted small">
+                                <?php echo isset($v['created_at']) ? date('M j, Y g:i A', strtotime($v['created_at'])) : '—'; ?>
+                            </td>
+                            <td>
+                                <?php if ($index !== 0): ?>
+                                    <a href="create_prompt.php?restore=<?php echo $v['version_id']; ?>&prompt_id=<?php echo $editPrompt['prompt_id']; ?>"
+                                       class="btn btn-sm btn-outline-warning"
+                                       onclick="return confirm('Restore this version? The current text will be saved as a new version.')">
+                                        Restore
+                                    </a>
+                                    <a href="create_prompt.php?delete_version=<?php echo $v['version_id']; ?>&prompt_id=<?php echo $editPrompt['prompt_id']; ?>"
+                                       class="btn btn-sm btn-outline-danger ms-1"
+                                       onclick="return confirm('Delete this version?')">
+                                        Delete
+                                    </a>
+                                <?php else: ?>
+                                    <span class="text-muted small">—</span>
+                                <?php endif; ?>
+                            </td>
+                        </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <?php endif; ?>
 
     <a href="prompt_library.php" class="btn btn-outline-secondary">📚 View Prompt Library</a>
 

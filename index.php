@@ -10,20 +10,20 @@ $pageTitle = "Image Prompt Manager";
 
 $sections = [
     [
-        "href"        => "pages/prompts.php",
+        "href"        => "pages/prompt_library.php",
         "icon"        => "📚",
         "title"       => "Prompt Library",
         "desc"        => "Browse, search, and manage all your saved image prompts. Filter by tag, category, or model.",
-        "status"      => "In Progress",
-        "badge_class" => "bg-warning text-dark",
+        "status"      => "Active",
+        "badge_class" => "bg-success",
     ],
     [
-        "href"        => "#",
+        "href"        => "pages/create_prompt.php",
         "icon"        => "✏️",
         "title"       => "Create Prompt",
         "desc"        => "Write a new image prompt with a title, tags, category, and version history built in.",
-        "status"      => "In Progress",
-        "badge_class" => "bg-warning text-dark",
+        "status"      => "Active",
+        "badge_class" => "bg-success",
     ],
     [
         "href"        => "generate.php",

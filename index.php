@@ -41,14 +41,14 @@ $sections = [
         "status"      => "Coming Soon",
         "badge_class" => "bg-secondary",
     ],
-    [
-        "href"        => "#",
-        "icon"        => "🔍",
-        "title"       => "Image-to-Prompt",
-        "desc"        => "Upload an image and let the system reverse-engineer a descriptive prompt you can save and reuse.",
-        "status"      => "Coming Soon",
-        "badge_class" => "bg-secondary",
-    ],
+   [
+       "href"        => "pages/image_to_prompt.php",
+       "icon"        => "🔍",
+       "title"       => "Image-to-Prompt",
+       "desc"        => "Upload an image and let the system reverse-engineer a descriptive prompt you can save and reuse.",
+       "status"      => "Active",
+       "badge_class" => "bg-success",
+   ],
 ];
 ?>
 <!DOCTYPE html>

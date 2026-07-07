@@ -1,42 +1,68 @@
 <?php
 require_once '../includes/database.php';
+require_once '../includes/config.php';
 
 $conn = getConnection();
 
-$message = null;
-$suggestedPrompt = null;
-$saved = false;
+$message = "";
+$error = "";
+$generatedPrompt = "";
+$imagePreview = "";
 
-if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['make_suggestion'])) {
-    $imageDescription = trim($_POST['image_description']);
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
-    if ($imageDescription === '') {
-        $message = ['danger', 'Please enter an image description first.'];
-    } else {
-        $suggestedPrompt = $imageDescription . ', highly detailed, realistic lighting, sharp focus, professional composition';
+    if (isset($_POST['save_prompt'])) {
+        $title = $conn->real_escape_string(trim($_POST['title']));
+        $prompt_text = $conn->real_escape_string(trim($_POST['prompt_text']));
+        $category = $conn->real_escape_string(trim($_POST['category']));
+        $tags = $conn->real_escape_string(trim($_POST['tags']));
+
+        if ($title == "" || $prompt_text == "") {
+            $error = "Title and prompt text are required.";
+        } else {
+            $conn->query("
+                INSERT INTO prompts (title, prompt_text, category, tags)
+                VALUES ('$title', '$prompt_text', '$category', '$tags')
+            ");
+
+            $newId = $conn->insert_id;
+
+            $conn->query("
+                INSERT INTO prompt_versions (prompt_id, version_number, version_text)
+                VALUES ($newId, 1, '$prompt_text')
+            ");
+
+            header("Location: prompt_library.php");
+            exit;
+        }
     }
-}
 
-if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['save_prompt'])) {
-    $title = trim($_POST['title']);
-    $promptText = trim($_POST['prompt_text']);
-    $category = trim($_POST['category']);
-    $tags = trim($_POST['tags']);
+    if (isset($_POST['analyze_image'])) {
+        if (!isset($_FILES['image']) || $_FILES['image']['error'] != 0) {
+            $error = "Please upload an image.";
+        } else {
+            $allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
+            $fileType = mime_content_type($_FILES['image']['tmp_name']);
 
-    if ($title === '' || $promptText === '') {
-        $message = ['danger', 'Title and prompt text are required.'];
-        $suggestedPrompt = $promptText;
-    } else {
-        $stmt = $conn->prepare("
-            INSERT INTO prompts (title, prompt_text, category, tags, favorite_status)
-            VALUES (?, ?, ?, ?, 0)
-        ");
+            if (!in_array($fileType, $allowedTypes)) {
+                $error = "Only JPG, PNG, and WEBP images are allowed.";
+            } else {
+                $uploadDir = "../uploads/";
 
-        $stmt->bind_param("ssss", $title, $promptText, $category, $tags);
-        $stmt->execute();
+                if (!is_dir($uploadDir)) {
+                    mkdir($uploadDir, 0777, true);
+                }
 
-        $saved = true;
-        $message = ['success', 'Prompt saved successfully. You can now view it in the Prompt Library.'];
+                $fileName = time() . "_" . basename($_FILES['image']['name']);
+                $targetPath = $uploadDir . $fileName;
+
+                move_uploaded_file($_FILES['image']['tmp_name'], $targetPath);
+
+                $imagePreview = $targetPath;
+
+                $generatedPrompt = "A detailed high-quality image based on the uploaded picture. Include the main subject, background, lighting, colors, mood, camera angle, and visual style. Make the image clear, realistic, and professional with strong details and balanced composition.";
+            }
+        }
     }
 }
 
@@ -47,166 +73,105 @@ $conn->close();
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Image-to-Prompt</title>
+    <title>Image to Prompt</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-
-    <style>
-        body {
-            background-color: #f8f9fa;
-        }
-
-        .page-wrapper {
-            max-width: 900px;
-            margin: 50px auto;
-        }
-
-        .main-card {
-            border: none;
-            border-radius: 16px;
-            box-shadow: 0 4px 20px rgba(0,0,0,.08);
-        }
-
-        .suggestion-box {
-            background: #f1f7ff;
-            border: 1px solid #b6d4fe;
-            border-radius: 12px;
-            padding: 18px;
-            font-size: 16px;
-            line-height: 1.6;
-        }
-
-        .save-btn {
-            background: #198754;
-            color: white;
-            font-weight: 600;
-        }
-
-        .copy-btn {
-            font-weight: 600;
-        }
-    </style>
 </head>
 
-<body>
+<body class="bg-light">
 
-<div class="container mt-3">
-    <a href="../index.php" class="btn btn-outline-secondary">
-        ← Back to Dashboard
-    </a>
-</div>
+<div class="container mt-4 mb-5">
 
-<div class="container page-wrapper">
+    <a href="../index.php" class="text-decoration-none text-muted small">&larr; Back to Home</a>
 
-    <div class="card main-card mb-4">
-        <div class="card-body p-4">
+    <h2 class="fw-bold mt-2">Image to Prompt</h2>
+    <p class="text-muted">Upload an image and create an editable prompt from it.</p>
 
-            <h1 class="text-center mb-2">🔍 Image-to-Prompt</h1>
+    <?php if ($error != ""): ?>
+        <div class="alert alert-danger"><?php echo $error; ?></div>
+    <?php endif; ?>
 
-            <p class="text-center text-muted mb-4">
-                Display reverse-engineered prompt suggestions and save them into the Prompt Library.
-            </p>
+    <?php if ($message != ""): ?>
+        <div class="alert alert-success"><?php echo $message; ?></div>
+    <?php endif; ?>
 
-            <?php if ($message): ?>
-                <div class="alert alert-<?php echo $message[0]; ?>">
-                    <?php echo htmlspecialchars($message[1]); ?>
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-body">
+            <h5 class="card-title">Upload Image</h5>
+
+            <form method="POST" enctype="multipart/form-data">
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Choose Image</label>
+                    <input type="file" name="image" class="form-control" accept=".jpg,.jpeg,.png,.webp" required>
+                    <div class="form-text">Supported formats: JPG, PNG, WEBP</div>
                 </div>
-            <?php endif; ?>
 
-            <?php if (!$saved): ?>
+                <button type="submit" name="analyze_image" class="btn btn-primary">
+                    Generate Prompt
+                </button>
 
-                <form method="POST">
-
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold">
-                            Image Analysis Result
-                        </label>
-
-                        <textarea
-                            name="image_description"
-                            class="form-control"
-                            rows="4"
-                            placeholder="Example: A cat sitting near a window during sunset with warm lighting"
-                            required><?php echo htmlspecialchars($_POST['image_description'] ?? ''); ?></textarea>
-
-                        <div class="form-text">
-                            The uploaded image will automatically generate a prompt suggestion after analysis.
-                        </div>
-                    </div>
-
-                    <button type="submit" name="make_suggestion" class="btn btn-primary">
-                        Generate Prompt Suggestion
-                    </button>
-
-                </form>
-
-            <?php endif; ?>
-
+                <a href="../index.php" class="btn btn-secondary">Back</a>
+            </form>
         </div>
     </div>
 
-    <?php if ($suggestedPrompt && !$saved): ?>
+    <?php if ($generatedPrompt != ""): ?>
 
-        <div class="card main-card">
-            <div class="card-body p-4">
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-body">
 
-                <h4 class="mb-3">Generated Prompt Suggestion</h4>
+                <h5 class="card-title">Uploaded Image Preview</h5>
 
-                <div class="suggestion-box mb-4" id="promptText">
-                    <?php echo htmlspecialchars($suggestedPrompt); ?>
-                </div>
+                <img src="<?php echo htmlspecialchars($imagePreview); ?>"
+                     class="img-fluid rounded border mb-4"
+                     style="max-height: 300px;">
+
+                <h5 class="card-title">Generated Prompt</h5>
+                <p class="text-muted small">You can edit this prompt before saving it to the library.</p>
 
                 <form method="POST">
 
-                    <input
-                        type="hidden"
-                        name="prompt_text"
-                        value="<?php echo htmlspecialchars($suggestedPrompt); ?>"
-                    >
-
                     <div class="mb-3">
-                        <label class="form-label fw-semibold">Prompt Title</label>
-                        <input
-                            type="text"
-                            name="title"
-                            class="form-control"
-                            placeholder="Example: Sunset Cat Portrait"
-                            required
-                        >
+                        <label class="form-label fw-semibold">Title</label>
+                        <input type="text"
+                               name="title"
+                               class="form-control"
+                               value="Image Generated Prompt"
+                               required>
                     </div>
 
                     <div class="mb-3">
-                        <label class="form-label fw-semibold">Category</label>
-                        <input
-                            type="text"
-                            name="category"
-                            class="form-control"
-                            value="Image-to-Prompt"
-                        >
+                        <label class="form-label fw-semibold">Prompt Text</label>
+                        <textarea name="prompt_text"
+                                  class="form-control"
+                                  rows="6"
+                                  required><?php echo htmlspecialchars($generatedPrompt); ?></textarea>
                     </div>
 
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold">Tags</label>
-                        <input
-                            type="text"
-                            name="tags"
-                            class="form-control"
-                            value="image-to-prompt"
-                        >
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Category</label>
+                            <input type="text"
+                                   name="category"
+                                   class="form-control"
+                                   value="Image to Prompt">
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Tags</label>
+                            <input type="text"
+                                   name="tags"
+                                   class="form-control"
+                                   value="image,upload,generated">
+                        </div>
                     </div>
 
-                    <button type="submit" name="save_prompt" class="btn save-btn">
-                        Save as New Prompt
-                    </button>
-
-                    <button type="button" class="btn btn-outline-primary copy-btn" onclick="copyPrompt()">
-                        Copy Prompt
-                    </button>
-
-                    <a href="prompt_library.php" class="btn btn-outline-secondary">
-                        View Library
-                    </a>
+                    <div class="mt-4">
+                        <button type="submit" name="save_prompt" class="btn btn-success">
+                            Save to Prompt Library
+                        </button>
+                    </div>
 
                 </form>
 
@@ -215,41 +180,11 @@ $conn->close();
 
     <?php endif; ?>
 
-    <?php if ($saved): ?>
-
-        <div class="card main-card">
-            <div class="card-body p-4 text-center">
-
-                <h3 class="mb-3">✅ Saved</h3>
-
-                <p class="text-muted">
-                    Your reverse-engineered prompt was saved as a new prompt.
-                </p>
-
-                <a href="prompt_library.php" class="btn btn-primary">
-                    View Prompt Library
-                </a>
-
-                <a href="image_to_prompt.php" class="btn btn-outline-secondary">
-                    Create Another
-                </a>
-
-            </div>
-        </div>
-
-    <?php endif; ?>
+    <a href="prompt_library.php" class="btn btn-outline-secondary">View Prompt Library</a>
 
 </div>
 
-<script>
-    function copyPrompt() {
-        const text = document.getElementById("promptText").innerText;
-
-        navigator.clipboard.writeText(text).then(function () {
-            alert("Prompt copied!");
-        });
-    }
-</script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
 </body>
 </html>

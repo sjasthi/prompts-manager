@@ -27,7 +27,7 @@ CREATE TABLE generated_images (
     image_id INT AUTO_INCREMENT PRIMARY KEY,
     prompt_id INT NOT NULL,
     model_name VARCHAR(100),
-    image_path VARCHAR(500),
+    image_path LONGTEXT,
     generation_date DATETIME DEFAULT CURRENT_TIMESTAMP,
     generation_status ENUM('success', 'failure') DEFAULT 'success',
     FOREIGN KEY (prompt_id) REFERENCES prompts(prompt_id) ON DELETE CASCADE

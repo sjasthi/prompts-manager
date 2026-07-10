@@ -116,7 +116,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
 
                 curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
-
+                curl_setopt($ch, CURLOPT_TIMEOUT, 60);
+                curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 10);
 
 
                 $response = curl_exec($ch);

@@ -5,7 +5,43 @@ require_once 'includes/config.php';
 
 $conn = getConnection();
 
-/* Load prompts */
+/*
+|--------------------------------------------------------------------------
+| Dashboard Statistics
+|--------------------------------------------------------------------------
+*/
+
+$totalImages = 0;
+$totalFavorites = 0;
+
+$favQuery = $conn->query("
+    SELECT COUNT(*) AS total_favorites
+    FROM generated_images
+    WHERE favorite = 1
+");
+
+if ($favQuery && $favRow = $favQuery->fetch_assoc()) {
+    $totalFavorites = $favRow['total_favorites'];
+}
+$totalModels = 2;
+
+$statsQuery = $conn->query("
+    SELECT
+        COUNT(*) AS total_images
+    FROM generated_images
+");
+
+if ($statsQuery && $statsRow = $statsQuery->fetch_assoc()) {
+    $totalImages = $statsRow['total_images'];
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Load Prompt Library
+|--------------------------------------------------------------------------
+*/
+
 $promptsResult = $conn->query("
     SELECT prompt_id, title, prompt_text
     FROM prompts
@@ -14,19 +50,116 @@ $promptsResult = $conn->query("
 ");
 
 
-$imageUrl = null;
-$errorMessage = null;
+/*
+|--------------------------------------------------------------------------
+| Load Previous Images (Always Visible)
+|--------------------------------------------------------------------------
+*/
+
 $previousImages = [];
 
+$search = $_GET['search'] ?? "";
+$modelFilter = $_GET['filter_model'] ?? "";
 
+$sql = "
+    SELECT
+        image_id,
+        image_path,
+        model_name,
+        generation_date,
+        favorite
+    FROM generated_images
+    WHERE generation_status = 'success'
+";
+
+
+$params = [];
+$types = "";
+
+
+if ($search !== "") {
+
+    $sql .= " AND model_name LIKE ? ";
+
+    $params[] = "%$search%";
+    $types .= "s";
+
+}
+
+
+if ($modelFilter !== "") {
+
+    $sql .= " AND model_name = ? ";
+
+    $params[] = $modelFilter;
+    $types .= "s";
+
+}
+if(isset($_GET['favorites'])) {
+
+    $sql .= " AND favorite = 1 ";
+
+}
+
+
+$sql .= "
+    ORDER BY generation_date DESC
+    LIMIT 30
+";
+
+
+$stmt = $conn->prepare($sql);
+
+
+if (!empty($params)) {
+
+    $stmt->bind_param(
+            $types,
+            ...$params
+    );
+
+}
+
+
+$stmt->execute();
+
+$historyQuery = $stmt->get_result();
+
+
+while ($history = $historyQuery->fetch_assoc()) {
+
+    $previousImages[] = $history;
+
+}
+
+while ($history = $historyQuery->fetch_assoc()) {
+    $previousImages[] = $history;
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Default Variables
+|--------------------------------------------------------------------------
+*/
+
+$imageUrl = null;
+$errorMessage = null;
+$modelName = "";
+$latestImageId = null;
+$latestFavorite = false;
+
+
+/*
+|--------------------------------------------------------------------------
+| Generate Image
+|--------------------------------------------------------------------------
+*/
 
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
-
     $prompt_id = intval($_POST['prompt_id']);
-
-    $model = $_POST['model'] ?? 'pollinations';
-
+    $model = $_POST['model'] ?? "pollinations";
 
     $stmt = $conn->prepare("
         SELECT prompt_text
@@ -34,162 +167,117 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         WHERE prompt_id = ?
     ");
 
-    $stmt->bind_param("i", $prompt_id);
+    $stmt->bind_param(
+            "i",
+            $prompt_id
+    );
     $stmt->execute();
 
+    $promptResult = $stmt->get_result();
+    $promptRow = $promptResult->fetch_assoc();
 
-    $result = $stmt->get_result();
-    $row = $result->fetch_assoc();
-
-
-
-    if ($row) {
-
+    if ($promptRow) {
 
         try {
 
+            $promptText = trim($promptRow['prompt_text']);
 
-            $promptText = $row['prompt_text'];
+            switch ($model) {
 
+                /*
+                |--------------------------------------------------------------------------
+                | Pollinations AI
+                |--------------------------------------------------------------------------
+                */
+
+                case "pollinations":
+
+                    $seed = random_int(1, 999999999);
+
+                    $imageUrl =
+                            "https://image.pollinations.ai/prompt/"
+                            . urlencode($promptText)
+                            . "?seed="
+                            . $seed;
+
+                    $modelName = "Pollinations AI";
+
+                    break;
+
+
+                /*
+                |--------------------------------------------------------------------------
+                | Cloudflare FLUX
+                |--------------------------------------------------------------------------
+                */
+
+                case "cloudflare":
+
+                    $apiUrl =
+                            "https://api.cloudflare.com/client/v4/accounts/"
+                            . CF_ACCOUNT_ID
+                            . "/ai/run/@cf/black-forest-labs/flux-1-schnell";
+
+                    $payload = json_encode([
+                            "prompt" => $promptText
+                    ]);
+
+                    $ch = curl_init();
+
+                    curl_setopt_array($ch, [
+                            CURLOPT_URL => $apiUrl,
+                            CURLOPT_RETURNTRANSFER => true,
+                            CURLOPT_POST => true,
+                            CURLOPT_HTTPHEADER => [
+                                    "Authorization: Bearer " . CF_API_TOKEN,
+                                    "Content-Type: application/json"
+                            ],
+                            CURLOPT_POSTFIELDS => $payload
+                    ]);
+
+                    $response = curl_exec($ch);
+
+                    if (curl_errno($ch)) {
+                        throw new Exception(curl_error($ch));
+                    }
+
+                    curl_close($ch);
+
+                    $cloudflare = json_decode($response, true);
+
+                    if (!isset($cloudflare['result']['image'])) {
+                        throw new Exception("Cloudflare did not return an image.");
+                    }
+
+                    $imageUrl =
+                            "data:image/jpeg;base64,"
+                            . $cloudflare['result']['image'];
+
+                    $modelName = "Cloudflare FLUX";
+
+                    break;
+
+
+                default:
+
+                    throw new Exception("Invalid AI model selected.");
+
+            }
 
 
             /*
-             * IMAGE GENERATION
-             */
-
-            if ($model === "pollinations") {
-
-
-                $encodedPrompt = urlencode($promptText);
-
-
-                // Force fresh image
-                $seed = random_int(1, 999999999);
-
-
-                $imageUrl =
-                        "https://image.pollinations.ai/prompt/"
-                        . $encodedPrompt
-                        . "?seed="
-                        . $seed;
-
-
-                $modelName = "Pollinations AI";
-
-
-            }
-
-
-
-            elseif ($model === "cloudflare") {
-
-
-
-                $apiUrl =
-                        "https://api.cloudflare.com/client/v4/accounts/"
-                        . CF_ACCOUNT_ID
-                        . "/ai/run/@cf/black-forest-labs/flux-1-schnell";
-
-
-
-                $data = json_encode([
-                        "prompt" => $promptText
-                ]);
-
-
-
-                $ch = curl_init();
-
-
-
-                curl_setopt($ch, CURLOPT_URL, $apiUrl);
-
-                curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-
-                curl_setopt($ch, CURLOPT_POST, true);
-
-
-                curl_setopt($ch, CURLOPT_HTTPHEADER, [
-                        "Authorization: Bearer " . CF_API_TOKEN,
-                        "Content-Type: application/json"
-                ]);
-
-
-                curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
-                curl_setopt($ch, CURLOPT_TIMEOUT, 60);
-                curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 10);
-
-
-                $response = curl_exec($ch);
-
-
-
-                if (curl_errno($ch)) {
-
-                    throw new Exception(
-                            curl_error($ch)
-                    );
-
-                }
-
-
-                curl_close($ch);
-
-
-
-                $result = json_decode($response, true);
-
-
-
-                if (!isset($result['result']['image'])) {
-
-                    throw new Exception(
-                            "Cloudflare did not return an image."
-                    );
-
-                }
-
-
-
-                // Convert base64 response into image source
-                $imageUrl =
-                        "data:image/jpeg;base64,"
-                        . $result['result']['image'];
-
-
-
-                $modelName = "Cloudflare FLUX";
-
-            }
-
-
-
-            else {
-
-                throw new Exception(
-                        "Invalid AI model selected."
-                );
-
-            }
-
-
-
-            /*
-             * Save generation metadata
-             */
-
+            |--------------------------------------------------------------------------
+            | Save Successful Generation
+            |--------------------------------------------------------------------------
+            */
 
             $status = "success";
-
-
 
             $insertStmt = $conn->prepare("
                 INSERT INTO generated_images
                 (prompt_id, model_name, image_path, generation_status)
                 VALUES (?, ?, ?, ?)
             ");
-
-
 
             $insertStmt->bind_param(
                     "isss",
@@ -199,78 +287,51 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                     $status
             );
 
-
-
             $insertStmt->execute();
-
-
-
-
+            $latestImageId = $conn->insert_id;
 
             /*
-             * Load generation history
-             */
+            |--------------------------------------------------------------------------
+            | Refresh Gallery
+            |--------------------------------------------------------------------------
+            */
 
+            $previousImages = [];
 
-            $historyStmt = $conn->prepare("
-                SELECT image_path, model_name, generation_date
+            $historyQuery = $conn->query("
+                SELECT
+                    image_id,
+                    image_path,
+                    model_name,
+                    generation_date,
+                    favorite
                 FROM generated_images
-                WHERE prompt_id = ?
                 ORDER BY generation_date DESC
+                LIMIT 30
             ");
 
-
-
-            $historyStmt->bind_param(
-                    "i",
-                    $prompt_id
-            );
-
-
-
-            $historyStmt->execute();
-
-
-
-            $historyResult = $historyStmt->get_result();
-
-
-
-            while ($historyRow = $historyResult->fetch_assoc()) {
-
-                $previousImages[] = $historyRow;
-
+            while ($history = $historyQuery->fetch_assoc()) {
+                $previousImages[] = $history;
             }
 
-
+            $totalImages++;
 
         } catch (Exception $e) {
 
-
-            $errorMessage =
-                    "Image generation failed: "
-                    . $e->getMessage();
-
-
+            $errorMessage = "Image generation failed: " . $e->getMessage();
 
             $modelName =
                     ($model === "cloudflare")
                             ? "Cloudflare FLUX"
                             : "Pollinations AI";
 
-
-
             $status = "failure";
-
-
 
             $insertStmt = $conn->prepare("
                 INSERT INTO generated_images
                 (prompt_id, model_name, image_path, generation_status)
                 VALUES (?, ?, '', ?)
             ");
-
-
 
             $insertStmt->bind_param(
                     "iss",
@@ -279,16 +340,10 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                     $status
             );
 
-
             $insertStmt->execute();
-
         }
-
     }
-
 }
-
-
 
 $conn->close();
 
@@ -301,65 +356,93 @@ $conn->close();
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>Generate Image</title>
-
+    <title>AI Image Generator</title>
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 
+    <link rel="stylesheet"
+          href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
 
     <style>
 
-        body {
-            background-color: #f8f9fa;
+        body{
+            background:#f4f6fb;
         }
 
-
-        .page-wrapper {
-
-            max-width: 900px;
-            margin: 50px auto;
-
+        .page-wrapper{
+            max-width:1200px;
+            margin:40px auto;
         }
 
-
-        .generator-card {
-
-            border: none;
-            border-radius: 16px;
-            box-shadow: 0 4px 20px rgba(0,0,0,.08);
-
+        .generator-card{
+            border:none;
+            border-radius:18px;
+            box-shadow:0 8px 25px rgba(0,0,0,.08);
         }
 
+        .stat-card{
+            border:none;
+            border-radius:16px;
+            box-shadow:0 5px 18px rgba(0,0,0,.08);
+            transition:.2s;
+        }
 
-        .generate-btn {
+        .stat-card:hover{
+            transform:translateY(-3px);
+        }
 
-            background: linear-gradient(135deg,#7c3aed,#4f46e5);
-            border: none;
+        .stat-number{
+            font-size:1.5rem;
+            font-weight:700;
+        }
+
+        .hero-title{
+            font-weight:700;
+            font-size:2rem;
+        }
+
+        .hero-subtitle{
+            color:#6c757d;
+        }
+
+        .generate-btn{
+
+            background:linear-gradient(135deg,#7c3aed,#4f46e5);
             color:white;
+            border:none;
+
             font-weight:600;
-            padding:12px;
-            width:100%;
+
+            padding:10px 20px;
+
+            width:auto;
+
+            border-radius:10px;
 
         }
 
-
-        .generate-btn:hover {
-
+        .generate-btn:hover{
             opacity:.95;
-
         }
 
+        .generated-image{
 
-        .generated-image {
+            display:block;
+            margin:auto;
 
+            max-width:700px;
             width:100%;
-            border-radius:12px;
-            margin-top:20px;
+            max-height:550px;
+
+            object-fit:contain;
+
+            border-radius:15px;
+
+            box-shadow:0 8px 25px rgba(0,0,0,.18);
 
         }
 
-
-        .history-image {
+        .history-image{
 
             width:100%;
             height:220px;
@@ -367,13 +450,27 @@ $conn->close();
 
         }
 
+        .history-card{
 
-        .loading-overlay {
+            transition:.2s;
+
+        }
+
+        .history-card:hover{
+
+            transform:translateY(-4px);
+
+        }
+
+        .loading-overlay{
 
             display:none;
             position:fixed;
+
             inset:0;
-            background:rgba(255,255,255,.92);
+
+            background:rgba(255,255,255,.94);
+
             z-index:9999;
 
             justify-content:center;
@@ -382,13 +479,12 @@ $conn->close();
 
         }
 
-
-        .spinner {
+        .spinner{
 
             width:70px;
             height:70px;
 
-            border:8px solid #dee2e6;
+            border:8px solid #ddd;
             border-top:8px solid #6f42c1;
 
             border-radius:50%;
@@ -397,76 +493,161 @@ $conn->close();
 
         }
 
+        @keyframes spin{
 
-        .loading-text {
-
-            margin-top:20px;
-            font-size:18px;
-            font-weight:600;
-            text-align:center;
-
-        }
-
-
-        @keyframes spin {
-
-            from {
+            from{
                 transform:rotate(0deg);
             }
 
-            to {
+            to{
                 transform:rotate(360deg);
             }
 
         }
 
-
     </style>
 
 </head>
 
-
-
 <body>
 
 
-<div class="container mt-3">
+<div class="container mt-4">
 
     <a href="index.php" class="btn btn-outline-secondary">
 
-        ← Back to Dashboard
+        <i class="bi bi-arrow-left"></i>
+
+        Back to Dashboard
 
     </a>
 
 </div>
 
 
-
 <div class="loading-overlay" id="loading">
-
 
     <div class="spinner"></div>
 
+    <h4 class="mt-4">
 
-    <div class="loading-text">
+        Generating AI Image...
 
-        Generating AI image...
+    </h4>
 
-        <br>
+    <p class="text-muted">
 
-        <small class="text-muted">
-            This usually takes about 20–30 seconds.
-        </small>
+        This normally takes around 20–30 seconds.
 
-    </div>
-
+    </p>
 
 </div>
 
 
 
-
 <div class="container page-wrapper">
+
+
+    <div class="text-center mb-5">
+
+        <h1 class="hero-title">
+
+            🎨 AI Image Generator
+
+        </h1>
+
+        <p class="hero-subtitle">
+
+            Generate images from your saved prompts using multiple AI models.
+
+        </p>
+
+    </div>
+
+
+
+    <div class="row mb-4">
+
+
+        <div class="col-md-4 mb-3">
+
+            <div class="card stat-card">
+
+                <div class="card-body text-center">
+
+                    <div class="stat-number text-primary">
+
+                        <?= $totalImages ?>
+
+                    </div>
+
+                    <small class="text-muted">
+
+                        Images Generated
+
+                    </small>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+
+        <div class="col-md-4 mb-3">
+
+            <div class="card stat-card">
+
+                <div class="card-body text-center">
+
+                    <div class="stat-number text-warning">
+
+                        <?= $totalFavorites ?>
+
+                    </div>
+
+                    <small class="text-muted">
+
+                        Favorites
+
+                    </small>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+
+        <div class="col-md-4 mb-3">
+
+            <div class="card stat-card">
+
+                <div class="card-body text-center">
+
+                    <div class="stat-number text-success">
+
+                        <?= $totalModels ?>
+
+                    </div>
+
+                    <small class="text-muted">
+
+                        AI Models
+
+                    </small>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+    </div>
+
 
 
     <div class="card generator-card">
@@ -475,93 +656,75 @@ $conn->close();
         <div class="card-body p-4">
 
 
-            <h1 class="text-center mb-2">
+            <h3 class="mb-4">
 
-                🎨 Generate Image
+                Generate New Image
 
-            </h1>
-
-
-            <p class="text-center text-muted">
-
-                Generate AI images from saved prompts.
-
-            </p>
-
+            </h3>
 
 
             <form method="POST" onsubmit="showLoading()">
 
 
-
-                <div class="mb-3">
-
-
-                    <label class="form-label">
-
-                        Select Prompt
-
-                    </label>
+                <div class="row">
 
 
-                    <select class="form-select" name="prompt_id" required>
+                    <div class="col-md-7">
 
 
-                        <?php while ($prompt = $promptsResult->fetch_assoc()): ?>
+                        <label class="form-label">
+
+                            Select Prompt
+
+                        </label>
+
+                        <select
+                                class="form-select"
+                                name="prompt_id"
+                                required>
+
+                            <?php while ($prompt = $promptsResult->fetch_assoc()): ?>
+
+                                <option value="<?= $prompt['prompt_id'] ?>">
+
+                                    <?= htmlspecialchars($prompt['title']) ?>
+
+                                </option>
+
+                            <?php endwhile; ?>
+
+                        </select>
+
+                    </div>
 
 
-                            <option value="<?= $prompt['prompt_id'] ?>">
 
-                                <?= htmlspecialchars($prompt['title']) ?>
+                    <div class="col-md-5">
+
+
+                        <label class="form-label">
+
+                            AI Model
+
+                        </label>
+
+                        <select
+                                class="form-select"
+                                name="model">
+
+                            <option value="pollinations">
+
+                                Pollinations AI
 
                             </option>
 
+                            <option value="cloudflare">
 
-                        <?php endwhile; ?>
+                                Cloudflare FLUX
 
+                            </option>
 
-                    </select>
-
-
-                </div>
-
-
-
-
-
-                <div class="mb-3">
-
-
-                    <label class="form-label">
-
-                        AI Model
-
-                    </label>
-
-
-                    <select class="form-select" name="model" required>
-
-
-                        <option value="pollinations">
-
-                            Pollinations AI
-
-                        </option>
-
-
-                        <option value="cloudflare">
-
-                            Cloudflare FLUX
-
-                        </option>
-
-
-                    </select>
-
-
-                    <div class="form-text">
-
-                        Choose the AI model used to generate your image.
+                        </select>
 
                     </div>
 
@@ -569,190 +732,520 @@ $conn->close();
                 </div>
 
 
+                <div class="text-center mt-4">
 
+                    <button class="btn generate-btn">
 
+                        <i class="bi bi-stars"></i>
 
-                <button class="btn generate-btn">
+                        Generate Image
 
-                    Generate Image
+                    </button>
 
-                </button>
-
-
+                </div>
 
             </form>
 
+        </div>
 
+    </div>
+</div>
+
+</div>
+
+<?php if ($errorMessage): ?>
+
+    <div class="alert alert-danger mt-4 shadow-sm">
+
+        <strong>Generation Failed</strong><br>
+
+        <?= htmlspecialchars($errorMessage) ?>
+
+    </div>
+
+<?php endif; ?>
+
+
+
+<?php if ($imageUrl): ?>
+
+    <div class="card generator-card mt-4">
+
+        <div class="card-body">
+
+            <div class="d-flex justify-content-between align-items-center mb-3">
+
+                <h3 class="mb-0">
+
+                    ✨ Latest Generated Image
+
+                </h3>
+
+                <span class="badge bg-primary fs-6">
+
+                        <?= htmlspecialchars($modelName) ?>
+
+                    </span>
+
+            </div>
+
+            <img
+
+                    src="<?= htmlspecialchars($imageUrl) ?>"
+
+                    class="generated-image"
+
+                    alt="Generated Image"
+
+                    data-bs-toggle="modal"
+
+                    data-bs-target="#imageModal"
+
+                    style="cursor:pointer;"
+
+            >
+
+            <div class="row mt-4">
+
+                <div class="col-md-6">
+
+                    <strong>AI Model</strong>
+
+                    <p><?= htmlspecialchars($modelName) ?></p>
+
+                </div>
+
+                <div class="col-md-6">
+
+                    <strong>Generated</strong>
+
+                    <p><?= date("F j, Y g:i A") ?></p>
+
+                </div>
+
+            </div>
+
+            <div class="d-flex flex-wrap gap-2">
+
+                <a
+
+                        href="<?= htmlspecialchars($imageUrl) ?>"
+
+                        download="generated-image.jpg"
+
+                        class="btn btn-success"
+
+                >
+
+                    <i class="bi bi-download"></i>
+
+                    Download
+
+                </a>
+
+                <a
+                        href="favorite_image.php?id=<?= $latestImageId ?>"
+                        class="btn btn-outline-warning btn-sm">
+
+                    <?php if($latestFavorite): ?>
+
+                        ⭐ Favorited
+
+                    <?php else: ?>
+
+                        ☆ Favorite
+
+                    <?php endif; ?>
+
+                </a>
+
+
+                <a
+                        href="delete_image.php?id=<?= $latestImageId ?>"
+                        class="btn btn-danger"
+                        onclick="return confirm('Delete this image?');"
+                >
+
+                    <i class="bi bi-trash"></i>
+
+                    Delete
+
+                </a>
+
+                <button
+
+                        class="btn btn-primary"
+
+                        data-bs-toggle="modal"
+
+                        data-bs-target="#imageModal"
+
+                >
+
+                    <i class="bi bi-arrows-fullscreen"></i>
+
+                    View Full Size
+
+                </button>
+
+            </div>
 
         </div>
 
     </div>
 
+<?php endif; ?>
 
 
 
+<div class="card generator-card mt-4">
 
+    <div class="card-body">
 
-    <?php if ($errorMessage): ?>
+        <div class="d-flex justify-content-between align-items-center mb-4">
 
+            <h3 class="mb-0">
 
-        <div class="alert alert-danger mt-4">
+                🖼 Previous Generations
 
-            <?= htmlspecialchars($errorMessage) ?>
+            </h3>
+
+            <span class="badge bg-secondary">
+
+                    <?= count($previousImages) ?> Images
+
+                </span>
 
         </div>
+        <form method="GET" class="row g-2 mb-4">
 
+            <div class="col-md-4">
 
-    <?php endif; ?>
-
-
-
-
-
-
-    <?php if ($imageUrl): ?>
-
-
-        <div class="card generator-card mt-4">
-
-
-            <div class="card-body">
-
-
-                <h4>
-
-                    Generated Image
-
-                </h4>
-
-
-
-                <img
-
-                        src="<?= htmlspecialchars($imageUrl) ?>"
-
-                        class="generated-image"
-
-                        alt="Generated AI Image"
-
-                />
-
-
-
+                <input
+                        type="text"
+                        name="search"
+                        class="form-control"
+                        placeholder="Search AI models..."
+                        value="<?= htmlspecialchars($_GET['search'] ?? '') ?>"
+                >
 
             </div>
 
-        </div>
+
+            <div class="col-md-4">
+
+                <select name="filter_model" class="form-select">
+
+                    <option value="">
+                        All AI Models
+                    </option>
 
 
+                    <option value="Pollinations AI"
+                            <?= (($_GET['filter_model'] ?? '') == "Pollinations AI") ? "selected" : "" ?>>
+
+                        Pollinations AI
+
+                    </option>
 
 
+                    <option value="Cloudflare FLUX"
+                            <?= (($_GET['filter_model'] ?? '') == "Cloudflare FLUX") ? "selected" : "" ?>>
+
+                        Cloudflare FLUX
+
+                    </option>
 
 
+                </select>
 
-        <div class="mt-4">
-
-
-            <h4>
-
-                Previous Generations
-
-            </h4>
+            </div>
 
 
+            <div class="col-md-4">
+
+                <div class="form-check mt-2">
+
+                    <input
+                            class="form-check-input"
+                            type="checkbox"
+                            name="favorites"
+                            value="1"
+                            <?= isset($_GET['favorites']) ? "checked" : "" ?>
+                    >
+
+                    <label class="form-check-label">
+
+                        ⭐ Show Favorites Only
+
+                    </label>
+
+                </div>
+
+            </div>
+
+
+            <div class="col-md-2">
+
+                <button class="btn btn-primary w-100">
+
+                    🔎 Search
+
+                </button>
+
+            </div>
+
+
+            <div class="col-md-2">
+
+                <a href="generate.php" class="btn btn-secondary w-100">
+
+                    Reset
+
+                </a>
+
+            </div>
+
+
+        </form>
+
+        <?php if (empty($previousImages)): ?>
+
+            <div class="text-center text-muted py-5">
+
+                <i class="bi bi-images fs-1"></i>
+
+                <h5 class="mt-3">
+
+                    No images generated yet.
+
+                </h5>
+
+                <p>
+
+                    Generate your first AI image above.
+
+                </p>
+
+            </div>
+
+        <?php else: ?>
 
             <div class="row">
 
-
-
                 <?php foreach ($previousImages as $history): ?>
 
+                    <div class="col-lg-4 col-md-6 mb-4">
 
-                    <div class="col-md-4 mb-3">
-
-
-                        <div class="card shadow-sm">
-
-
+                        <div class="card history-card shadow-sm h-100">
 
                             <img
-
                                     src="<?= htmlspecialchars($history['image_path']) ?>"
-
                                     class="history-image card-img-top"
 
-                                    alt="Previous generation"
+                                    style="cursor:pointer;"
 
-                            />
+                                    data-bs-toggle="modal"
 
+                                    data-bs-target="#historyModal"
 
+                                    onclick="showHistoryImage('<?= htmlspecialchars($history['image_path']) ?>')"
 
+                                    alt="Generated Image"
+                            >
 
                             <div class="card-body">
 
-
-                                <strong>
+                                <h6 class="fw-bold">
 
                                     <?= htmlspecialchars($history['model_name']) ?>
 
-                                </strong>
+                                </h6>
 
+                                <small class="text-muted d-block mb-3">
 
-                                <br>
-
-
-                                <small class="text-muted">
-
-                                    <?= $history['generation_date'] ?>
+                                    <?= date("M j, Y g:i A", strtotime($history['generation_date'])) ?>
 
                                 </small>
 
+                                <div class="d-grid gap-2">
 
+                                    <a
+
+                                            href="<?= htmlspecialchars($history['image_path']) ?>"
+
+                                            download
+
+                                            class="btn btn-success btn-sm"
+
+                                    >
+
+                                        <i class="bi bi-download"></i>
+
+                                        Download
+
+                                    </a>
+
+                                    <a
+                                            href="favorite_image.php?id=<?= $history['image_id'] ?>"
+                                            class="btn btn-outline-warning btn-sm"
+                                    >
+
+                                        <?php if($history['favorite']): ?>
+
+                                            ⭐ Favorited
+
+                                        <?php else: ?>
+
+                                            ☆ Favorite
+
+                                        <?php endif; ?>
+
+                                    </a>
+
+
+                                    <a
+                                            href="delete_image.php?id=<?= $history['image_id'] ?>"
+                                            class="btn btn-outline-danger btn-sm"
+                                            onclick="return confirm('Delete this image?');"
+                                    >
+
+                                        <i class="bi bi-trash"></i>
+
+                                        Delete
+
+                                    </a>
+
+                                </div>
 
                             </div>
 
-
                         </div>
-
 
                     </div>
 
-
                 <?php endforeach; ?>
-
-
 
             </div>
 
+        <?php endif; ?>
 
-        </div>
+    </div>
 
-
-
-    <?php endif; ?>
-
-
-
+</div>
 
 </div>
 
 
 
+<!-- Latest Generated Image Modal -->
+
+<div class="modal fade" id="imageModal" tabindex="-1">
+
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+
+        <div class="modal-content">
+
+            <div class="modal-header">
+
+                <h5 class="modal-title">
+
+                    Latest Generated Image
+
+                </h5>
+
+                <button
+                        type="button"
+                        class="btn-close"
+                        data-bs-dismiss="modal">
+                </button>
+
+            </div>
+
+            <div class="modal-body text-center">
+
+                <?php if ($imageUrl): ?>
+
+                    <img
+                            src="<?= htmlspecialchars($imageUrl) ?>"
+                            class="img-fluid rounded"
+                            style="max-height:80vh;"
+                            alt="Generated Image">
+
+                <?php endif; ?>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+
+<!-- Previous Image Preview Modal -->
+
+<div class="modal fade" id="historyModal" tabindex="-1">
+
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+
+        <div class="modal-content">
+
+            <div class="modal-header">
+
+                <h5 class="modal-title">
+
+                    Previous Generation
+
+                </h5>
+
+                <button
+                        type="button"
+                        class="btn-close"
+                        data-bs-dismiss="modal">
+                </button>
+
+            </div>
+
+            <div class="modal-body text-center">
+
+                <img
+                        id="historyPreview"
+                        class="img-fluid rounded"
+                        style="max-height:80vh;"
+                        src=""
+                        alt="History Preview">
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
 
 
 <script>
 
+    function showLoading() {
 
-    function showLoading(){
+        document.getElementById("loading").style.display = "flex";
 
-        document.getElementById("loading").style.display="flex";
+        return true;
 
     }
 
+    function showHistoryImage(image) {
+
+        document.getElementById("historyPreview").src = image;
+
+    }
 
 </script>
 
-
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
 </body>
 

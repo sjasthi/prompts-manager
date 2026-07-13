@@ -1,7 +1,7 @@
 <?php
 require_once '../includes/database.php';
 require_once '../includes/config.php';
-
+require_once '../includes/cloudflare_ai.php';
 $conn = getConnection();
 
 $message = "";
@@ -58,10 +58,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 move_uploaded_file($_FILES['image']['tmp_name'], $targetPath);
 
-                $imagePreview = $targetPath;
+            $imagePreview = $targetPath;
 
-                $generatedPrompt = "A detailed high-quality image based on the uploaded picture. Include the main subject, background, lighting, colors, mood, camera angle, and visual style. Make the image clear, realistic, and professional with strong details and balanced composition.";
-            }
+            // Ask Cloudflare AI to analyze the uploaded image
+            $generatedPrompt = analyzeImageWithCloudflare($targetPath); }
         }
     }
 }

@@ -33,14 +33,14 @@ $sections = [
         "status"      => "Active",
         "badge_class" => "bg-success",
     ],
-    [
-        "href"        => "#",
-        "icon"        => "⚖️",
-        "title"       => "Compare Models",
-        "desc"        => "Run the same prompt across multiple AI models side by side and score their outputs.",
-        "status"      => "Coming Soon",
-        "badge_class" => "bg-secondary",
-    ],
+   [
+       "href"        => "pages/compare_models.php",
+       "icon"        => "⚖️",
+       "title"       => "Compare Models",
+       "desc"        => "Run the same prompt across multiple AI models side by side and score their outputs.",
+       "status"      => "Active",
+       "badge_class" => "bg-success",
+   ],
    [
        "href"        => "pages/image_to_prompt.php",
        "icon"        => "🔍",

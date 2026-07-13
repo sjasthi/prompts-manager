@@ -229,7 +229,11 @@ $conn->close();
                                 <?php echo htmlspecialchars(substr($v['version_text'], 0, 120)) . (strlen($v['version_text']) > 120 ? '...' : ''); ?>
                             </td>
                             <td class="text-muted small">
-                                <?php echo isset($v['created_at']) ? date('M j, Y g:i A', strtotime($v['created_at'])) : '—'; ?>
+                                <?php
+                                echo !empty($v['modified_date'])
+                                    ? date('M j, Y g:i A', strtotime($v['modified_date']))
+                                    : '—';
+                                ?>
                             </td>
                             <td>
                                 <?php if ($index !== 0): ?>

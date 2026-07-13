@@ -60,7 +60,58 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 $imagePreview = $targetPath;
 
-                $generatedPrompt = "A detailed high-quality image based on the uploaded picture. Include the main subject, background, lighting, colors, mood, camera angle, and visual style. Make the image clear, realistic, and professional with strong details and balanced composition.";
+                // Convert image to base64
+                $imageData = base64_encode(file_get_contents($targetPath));
+
+                // Call Cloudflare Llama Vision API
+                $apiUrl = "https://api.cloudflare.com/client/v4/accounts/" . CF_ACCOUNT_ID . "/ai/run/@cf/meta/llama-3.2-11b-vision-instruct";
+
+                $payload = json_encode([
+                    "messages" => [
+                        [
+                            "role" => "user",
+                            "content" => [
+                                [
+                                    "type" => "image_url",
+                                    "image_url" => [
+                                        "url" => "data:" . $fileType . ";base64," . $imageData
+                                    ]
+                                ],
+                                [
+                                    "type" => "text",
+                                    "text" => "Describe this image in detail as an AI image generation prompt. Include the subject, background, lighting, colors, mood, camera angle, and visual style. Be specific and descriptive."
+                                ]
+                            ]
+                        ]
+                    ]
+                ]);
+
+                $ch = curl_init();
+                curl_setopt($ch, CURLOPT_URL, $apiUrl);
+                curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+                curl_setopt($ch, CURLOPT_POST, true);
+                curl_setopt($ch, CURLOPT_TIMEOUT, 60);
+                curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 10);
+                curl_setopt($ch, CURLOPT_HTTPHEADER, [
+                    "Authorization: Bearer " . CF_API_TOKEN,
+                    "Content-Type: application/json"
+                ]);
+                curl_setopt($ch, CURLOPT_POSTFIELDS, $payload);
+
+                $response = curl_exec($ch);
+
+                if (curl_errno($ch)) {
+                    $error = "API error: " . curl_error($ch);
+                } else {
+                    $result = json_decode($response, true);
+                    if (isset($result['result']['response'])) {
+                        $generatedPrompt = $result['result']['response'];
+                    } else {
+                        $error = "Could not generate prompt from image. Please try again.";
+                    }
+                }
+
+                curl_close($ch);
             }
         }
     }
@@ -75,7 +126,6 @@ $conn->close();
     <meta charset="UTF-8">
     <title>Image to Prompt</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
-
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
 
@@ -85,20 +135,21 @@ $conn->close();
 
     <a href="../index.php" class="text-decoration-none text-muted small">&larr; Back to Home</a>
 
-    <h2 class="fw-bold mt-2">Image to Prompt</h2>
-    <p class="text-muted">Upload an image and create an editable prompt from it.</p>
+    <h2 class="fw-bold mt-2">🔍 Image to Prompt</h2>
+    <p class="text-muted">Upload an image and let AI reverse-engineer a descriptive prompt from it.</p>
 
     <?php if ($error != ""): ?>
-        <div class="alert alert-danger"><?php echo $error; ?></div>
+        <div class="alert alert-danger"><?php echo htmlspecialchars($error); ?></div>
     <?php endif; ?>
 
     <?php if ($message != ""): ?>
-        <div class="alert alert-success"><?php echo $message; ?></div>
+        <div class="alert alert-success"><?php echo htmlspecialchars($message); ?></div>
     <?php endif; ?>
 
     <div class="card shadow-sm border-0 mb-4">
         <div class="card-body">
             <h5 class="card-title">Upload Image</h5>
+            <p class="text-muted small">The AI will analyze your image and generate a detailed prompt you can edit and save.</p>
 
             <form method="POST" enctype="multipart/form-data">
                 <div class="mb-3">
@@ -111,7 +162,7 @@ $conn->close();
                     Generate Prompt
                 </button>
 
-                <a href="../index.php" class="btn btn-secondary">Back</a>
+                <a href="../index.php" class="btn btn-secondary ms-2">Back</a>
             </form>
         </div>
     </div>
@@ -127,8 +178,8 @@ $conn->close();
                      class="img-fluid rounded border mb-4"
                      style="max-height: 300px;">
 
-                <h5 class="card-title">Generated Prompt</h5>
-                <p class="text-muted small">You can edit this prompt before saving it to the library.</p>
+                <h5 class="card-title">AI Generated Prompt</h5>
+                <p class="text-muted small">Edit the prompt below before saving it to the library.</p>
 
                 <form method="POST">
 
@@ -180,7 +231,7 @@ $conn->close();
 
     <?php endif; ?>
 
-    <a href="prompt_library.php" class="btn btn-outline-secondary">View Prompt Library</a>
+    <a href="prompt_library.php" class="btn btn-outline-secondary">📚 View Prompt Library</a>
 
 </div>
 

@@ -1,1 +1,14 @@
+# macOS
+.DS_Store
 
+# IntelliJ IDEA
+.idea/
+
+# VS Code
+.vscode/
+
+# Temporary uploaded images
+uploads/*.jpg
+uploads/*.jpeg
+uploads/*.png
+uploads/*.webp

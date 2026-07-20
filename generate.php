@@ -61,9 +61,25 @@ $previousImages = [];
 $search = $_GET['search'] ?? "";
 $modelFilter = $_GET['filter_model'] ?? "";
 
+$page = max(1, intval($_GET['page'] ?? 1));
+
+$imagesPerPage = 24;
+
+$offset = ($page - 1) * $imagesPerPage;
+
+$countSql = "
+    SELECT COUNT(*)
+    FROM generated_images
+    WHERE generation_status = 'success'
+";
+
+$totalImages = $conn->query($countSql)->fetch_row()[0];
+$totalPages = max(1, ceil($totalImages / $imagesPerPage));
+
 $sql = "
     SELECT
         image_id,
+        image_title,
         image_path,
         model_name,
         generation_date,
@@ -79,10 +95,15 @@ $types = "";
 
 if ($search !== "") {
 
-    $sql .= " AND model_name LIKE ? ";
+    $sql .= " AND (
+        image_title LIKE ?
+        OR model_name LIKE ?
+    ) ";
 
     $params[] = "%$search%";
-    $types .= "s";
+    $params[] = "%$search%";
+
+    $types .= "ss";
 
 }
 
@@ -104,21 +125,21 @@ if(isset($_GET['favorites'])) {
 
 $sql .= "
     ORDER BY generation_date DESC
-    LIMIT 30
+    LIMIT ?, ?
 ";
 
 
 $stmt = $conn->prepare($sql);
 
+$params[] = $offset;
+$params[] = $imagesPerPage;
 
-if (!empty($params)) {
+$types .= "ii";
 
-    $stmt->bind_param(
-            $types,
-            ...$params
-    );
-
-}
+$stmt->bind_param(
+    $types,
+    ...$params
+);
 
 
 $stmt->execute();
@@ -181,6 +202,28 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         try {
 
             $promptText = trim($promptRow['prompt_text']);
+
+            /*
+            |--------------------------------------------------------------------------
+            | Generate Image Title
+            |--------------------------------------------------------------------------
+            */
+
+            $imageTitle = trim($promptText);
+
+            $imageTitle = preg_replace('/^(an?|the)\s+/i', '', $imageTitle);
+
+            $imageTitle = preg_replace('/,.*$/', '', $imageTitle);
+
+            $imageTitle = preg_replace('/\b(with|wearing|holding|during|standing|sitting|looking|in|at|on|under|beside|near)\b.*$/i', '', $imageTitle);
+
+            $imageTitle = ucwords(trim($imageTitle));
+
+            if (strlen($imageTitle) > 40) {
+
+                $imageTitle = substr($imageTitle, 0, 40);
+
+            }
 
             switch ($model) {
 
@@ -275,17 +318,24 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
             $insertStmt = $conn->prepare("
                 INSERT INTO generated_images
-                (prompt_id, model_name, image_path, generation_status)
-                VALUES (?, ?, ?, ?)
+                (
+                    prompt_id,
+                    image_title,
+                    model_name,
+                    image_path,
+                    generation_status
+                )
+                VALUES (?, ?, ?, ?, ?)
             ");
 
             $insertStmt->bind_param(
-                    "isss",
-                    $prompt_id,
-                    $modelName,
-                    $imageUrl,
-                    $status
-            );
+                     "issss",
+                     $prompt_id,
+                     $imageTitle,
+                     $modelName,
+                     $imageUrl,
+                     $status
+             );
 
             $insertStmt->execute();
             $latestImageId = $conn->insert_id;
@@ -301,6 +351,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             $historyQuery = $conn->query("
                 SELECT
                     image_id,
+                    image_title,
                     image_path,
                     model_name,
                     generation_date,
@@ -504,6 +555,22 @@ $conn->close();
             }
 
         }
+    /* History Modal Navigation Buttons */
+
+    #prevImage,
+    #nextImage {
+
+        transition: .2s;
+
+    }
+
+    #prevImage:hover,
+    #nextImage:hover {
+
+        opacity: .95 !important;
+        transform: translateY(-50%) scale(1.1);
+
+    }
 
     </style>
 
@@ -807,19 +874,25 @@ $conn->close();
 
             <div class="row mt-4">
 
-                <div class="col-md-6">
+                <div class="col-md-12">
 
-                    <strong>AI Model</strong>
+                    <h4 class="mb-1">
 
-                    <p><?= htmlspecialchars($modelName) ?></p>
+                        <?= htmlspecialchars($imageTitle) ?>
 
-                </div>
+                    </h4>
 
-                <div class="col-md-6">
+                    <p class="text-muted mb-0">
 
-                    <strong>Generated</strong>
+                        <?= htmlspecialchars($modelName) ?>
 
-                    <p><?= date("F j, Y g:i A") ?></p>
+                    </p>
+
+                    <small class="text-muted">
+
+                        Generated <?= date("F j, Y g:i A") ?>
+
+                    </small>
 
                 </div>
 
@@ -925,7 +998,7 @@ $conn->close();
                         type="text"
                         name="search"
                         class="form-control"
-                        placeholder="Search AI models..."
+                        placeholder="Search images..."
                         value="<?= htmlspecialchars($_GET['search'] ?? '') ?>"
                 >
 
@@ -1033,34 +1106,55 @@ $conn->close();
 
             <div class="row">
 
-                <?php foreach ($previousImages as $history): ?>
+                <?php foreach ($previousImages as $index => $history): ?>
 
                     <div class="col-lg-4 col-md-6 mb-4">
 
-                        <div class="card history-card shadow-sm h-100">
+                        <div class="card history-card shadow-sm h-100 position-relative">
+
+                            <?php if ($history['favorite']): ?>
+
+                                <div
+                                    class="position-absolute top-0 end-0 p-2"
+                                    style="font-size:28px; z-index:10;"
+                                >
+
+                                    ❤️
+
+                                </div>
+
+                            <?php endif; ?>
 
                             <img
-                                    src="<?= htmlspecialchars($history['image_path']) ?>"
-                                    class="history-image card-img-top"
+                                src="<?= htmlspecialchars($history['image_path']) ?>"
+                                class="history-image card-img-top"
 
-                                    style="cursor:pointer;"
+                                data-index="<?= $index ?>"
 
-                                    data-bs-toggle="modal"
+                                onclick="openHistoryModal(<?= $index ?>)"
 
-                                    data-bs-target="#historyModal"
+                                style="cursor:pointer;"
 
-                                    onclick="showHistoryImage('<?= htmlspecialchars($history['image_path']) ?>')"
-
-                                    alt="Generated Image"
+                                alt="Previous generation"
                             >
 
                             <div class="card-body">
 
-                                <h6 class="fw-bold">
+                                <h5 class="fw-bold mb-1">
+
+                                    <?= htmlspecialchars(
+                                        !empty($history['image_title'])
+                                            ? $history['image_title']
+                                            : 'Generated Image'
+                                    ) ?>
+
+                                </h5>
+
+                                <p class="text-muted mb-1">
 
                                     <?= htmlspecialchars($history['model_name']) ?>
 
-                                </h6>
+                                </p>
 
                                 <small class="text-muted d-block mb-3">
 
@@ -1127,6 +1221,57 @@ $conn->close();
                 <?php endforeach; ?>
 
             </div>
+        <div class="d-flex justify-content-between align-items-center mt-4">
+
+            <?php if ($page > 1): ?>
+
+                <a
+                    class="btn btn-outline-primary"
+                    href="?page=<?= $page - 1 ?>&search=<?= urlencode($search) ?>&filter_model=<?= urlencode($modelFilter) ?>"
+                >
+                    ← Previous
+                </a>
+
+            <?php else: ?>
+
+                <button class="btn btn-outline-secondary" disabled>
+
+                    ← Previous
+
+                </button>
+
+            <?php endif; ?>
+
+
+
+            <span class="fw-semibold">
+
+                Page <?= $page ?> of <?= $totalPages ?>
+
+            </span>
+
+
+
+            <?php if ($page < $totalPages): ?>
+
+                <a
+                    class="btn btn-outline-primary"
+                    href="?page=<?= $page + 1 ?>&search=<?= urlencode($search) ?>&filter_model=<?= urlencode($modelFilter) ?>"
+                >
+                    Next →
+                </a>
+
+            <?php else: ?>
+
+                <button class="btn btn-outline-secondary" disabled>
+
+                    Next →
+
+                </button>
+
+            <?php endif; ?>
+
+        </div>
 
         <?php endif; ?>
 
@@ -1188,13 +1333,13 @@ $conn->close();
 
 <div class="modal fade" id="historyModal" tabindex="-1">
 
-    <div class="modal-dialog modal-xl modal-dialog-centered">
+    <div class="modal-dialog modal-fullscreen modal-dialog-centered">
 
-        <div class="modal-content">
+        <div class="modal-content bg-dark border-0">
 
-            <div class="modal-header">
+            <div class="modal-header border-0">
 
-                <h5 class="modal-title">
+                <h5 class="modal-title text-white">
 
                     Previous Generation
 
@@ -1202,20 +1347,83 @@ $conn->close();
 
                 <button
                         type="button"
-                        class="btn-close"
+                        class="btn-close btn-close-white"
                         data-bs-dismiss="modal">
                 </button>
 
             </div>
 
-            <div class="modal-body text-center">
+            <div class="modal-body position-relative text-center p-0">
+
+                <!-- Previous -->
+
+                <button
+                        id="prevImage"
+                        class="btn btn-light position-absolute top-50 start-0 translate-middle-y ms-3 rounded-circle opacity-50"
+                        style="width:60px;height:60px;font-size:30px;z-index:1000;"
+                >
+
+                    ❮
+
+                </button>
+
+                <!-- Image -->
 
                 <img
                         id="historyPreview"
-                        class="img-fluid rounded"
-                        style="max-height:80vh;"
+                        class="img-fluid"
+                        style="max-height:88vh;"
                         src=""
-                        alt="History Preview">
+                        alt="History Preview"
+                >
+
+                <div class="text-white mt-4">
+
+                    <h3 id="modalTitle"></h3>
+
+                    <p id="modalModel" class="mb-1"></p>
+
+                    <small id="modalDate" class="text-light"></small>
+
+                </div>
+            <div class="d-flex justify-content-center flex-wrap gap-2 mt-4">
+
+                <a
+                    id="modalDownload"
+                    href="#"
+                    download
+                    class="btn btn-success"
+                >
+                    ⬇ Download
+                </a>
+
+               <button
+                   id="modalFavorite"
+                   class="btn btn-warning"
+               >
+                   ⭐ Favorite
+               </button>
+
+                <button
+                    id="modalDelete"
+                    class="btn btn-danger"
+                >
+                    🗑 Delete
+                </button>
+
+            </div>
+
+                <!-- Next -->
+
+                <button
+                        id="nextImage"
+                        class="btn btn-light position-absolute top-50 end-0 translate-middle-y me-3 rounded-circle opacity-50"
+                        style="width:60px;height:60px;font-size:30px;z-index:1000;"
+                >
+
+                    ❯
+
+                </button>
 
             </div>
 
@@ -1229,19 +1437,208 @@ $conn->close();
 
 <script>
 
-    function showLoading() {
+function showLoading() {
 
-        document.getElementById("loading").style.display = "flex";
+    document.getElementById("loading").style.display = "flex";
 
-        return true;
+    return true;
+
+}
+
+const galleryImages = [
+
+<?php foreach($previousImages as $history): ?>
+
+{
+    id: <?= $history['image_id'] ?>,
+    image: "<?= htmlspecialchars($history['image_path']) ?>",
+    title: "<?= htmlspecialchars($history['image_title']) ?>",
+    model: "<?= htmlspecialchars($history['model_name']) ?>",
+    date: "<?= date("F j, Y g:i A", strtotime($history['generation_date'])) ?>",
+    favorite: <?= $history['favorite'] ? 'true' : 'false' ?>
+},
+
+<?php endforeach; ?>
+
+];
+
+function openHistoryModal(index){
+
+    showHistoryImage(index);
+
+    const modal =
+        bootstrap.Modal.getOrCreateInstance(
+            document.getElementById("historyModal")
+        );
+
+    modal.show();
+
+}
+
+let currentImage = 0;
+
+function showHistoryImage(index){
+
+    currentImage = index;
+
+    document.getElementById("historyPreview").src =
+        galleryImages[currentImage].image;
+
+    document.getElementById("modalTitle").textContent =
+        galleryImages[currentImage].title;
+
+    document.getElementById("modalModel").textContent =
+        galleryImages[currentImage].model;
+
+    document.getElementById("modalDate").textContent =
+        galleryImages[currentImage].date;
+   document.getElementById("modalDownload").href =
+       galleryImages[currentImage].image;
+
+   document.getElementById("modalDownload").download =
+       galleryImages[currentImage].title
+           .replace(/[^\w\s-]/g,"")
+           .replace(/\s+/g,"_")
+           + ".jpg"
+
+   const favoriteButton = document.getElementById("modalFavorite");
+
+   if(galleryImages[currentImage].favorite){
+
+       favoriteButton.innerHTML = "❤️ Favorited";
+
+   }else{
+
+       favoriteButton.innerHTML = "🤍 Favorite";
+
+   }
+
+   document.getElementById("modalDelete").href =
+       "delete_image.php?id=" + galleryImages[currentImage].id;
+
+}
+
+document.getElementById("prevImage").onclick = function(){
+
+    currentImage--;
+
+    if(currentImage < 0){
+
+        currentImage = galleryImages.length - 1;
 
     }
 
-    function showHistoryImage(image) {
+    showHistoryImage(currentImage);
 
-        document.getElementById("historyPreview").src = image;
+};
+
+document.getElementById("nextImage").onclick = function(){
+
+    currentImage++;
+
+    if(currentImage >= galleryImages.length){
+
+        currentImage = 0;
 
     }
+
+    showHistoryImage(currentImage);
+
+};
+
+document.addEventListener("keydown", function(e){
+
+    if(!document.getElementById("historyModal").classList.contains("show"))
+        return;
+
+    if(e.key === "ArrowLeft"){
+
+        document.getElementById("prevImage").click();
+
+    }
+
+    if(e.key === "ArrowRight"){
+
+        document.getElementById("nextImage").click();
+
+    }
+
+});
+document.getElementById("modalFavorite").onclick = function(){
+
+    fetch(
+        "favorite_image.php?id=" + galleryImages[currentImage].id
+    )
+
+    .then(response => response.json())
+
+    .then(data => {
+
+        galleryImages[currentImage].favorite = data.favorite;
+
+        if(data.favorite){
+
+            this.innerHTML = "❤️ Favorited";
+
+        }else{
+
+            this.innerHTML = "🤍 Favorite";
+
+        }
+
+    });
+
+};
+
+document.getElementById("modalDelete").onclick = function(){
+
+    if(!confirm("Delete this image?")){
+
+        return;
+
+    }
+
+    fetch(
+        "delete_image.php?id=" + galleryImages[currentImage].id
+    )
+
+    .then(response => response.json())
+
+    .then(data => {
+
+        if(data.success){
+
+            // Remove the image from the gallery array
+            galleryImages.splice(currentImage, 1);
+
+            // If there are no images left, close the modal
+            if(galleryImages.length === 0){
+
+                bootstrap.Modal.getInstance(
+                    document.getElementById("historyModal")
+                ).hide();
+
+                location.reload();
+
+                return;
+
+            }
+
+            // If we deleted the last image, go back one
+            if(currentImage >= galleryImages.length){
+
+                currentImage = galleryImages.length - 1;
+
+            }
+
+            // Show the next available image
+            showHistoryImage(currentImage);
+
+        }
+
+    });
+
+};
 
 </script>
 

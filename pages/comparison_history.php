@@ -11,7 +11,7 @@ SELECT
     mc.prompt_id,
     mc.models_used,
     mc.output_references,
-    mc.created_at,
+    mc.comparison_date,
 
     p.title,
     p.prompt_text,
@@ -27,7 +27,7 @@ JOIN prompts p
 LEFT JOIN comparison_feedback cf
     ON mc.prompt_id = cf.prompt_id
 
-ORDER BY mc.created_at DESC
+ORDER BY mc.comparison_date DESC
 ";
 
 
@@ -221,7 +221,7 @@ echo $row['notes']
 <small class="text-muted">
 
 Compared:
-<?php echo $row['created_at']; ?>
+<?php echo $row['comparison_date']; ?>
 
 </small>
 

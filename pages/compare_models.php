@@ -5,6 +5,21 @@ require_once '../includes/config.php';
 
 $conn = getConnection();
 
+$errorMessage = '';
+$promptTitle = '';
+$promptText = '';
+$successMessage = '';
+
+if (isset($_GET['saved'])) {
+    $successMessage = "Evaluation saved successfully. Select another prompt to compare.";
+}
+
+$pollinationsImage = '';
+$cloudflareImage = '';
+
+$pollinationsTime = null;
+$cloudflareTime = null;
+
 if (isset($_POST['save_feedback'])) {
 
     $promptId = (int)$_POST['prompt_id'];
@@ -27,20 +42,12 @@ if (isset($_POST['save_feedback'])) {
         );
 
         $stmt->execute();
-        $successMessage = "Your comparison evaluation was saved successfully!";
+
+        header("Location: compare_models.php?saved=true");
+                exit;
     }
 }
 
-$errorMessage = '';
-$promptTitle = '';
-$promptText = '';
-$successMessage = '';
-
-$pollinationsImage = '';
-$cloudflareImage = '';
-
-$pollinationsTime = null;
-$cloudflareTime = null;
 /*
 |--------------------------------------------------------------------------
 | Load active prompts
@@ -60,7 +67,10 @@ $promptsResult = $conn->query("
 |--------------------------------------------------------------------------
 */
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+if (
+    $_SERVER['REQUEST_METHOD'] === 'POST'
+    && isset($_POST['compare_models'])
+) {
 
     $promptId = isset($_POST['prompt_id'])
         ? (int) $_POST['prompt_id']
@@ -371,9 +381,18 @@ href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.m
     <?php endif; ?>
 
     <?php if ($successMessage !== ''): ?>
-        <div class="alert alert-success">
-            <?php echo htmlspecialchars($successMessage); ?>
-        </div>
+
+    <div class="alert alert-success">
+        <?php echo htmlspecialchars($successMessage); ?>
+    </div>
+
+    <div class="mb-4">
+        <a href="compare_models.php"
+           class="btn btn-outline-primary">
+            Compare Another Prompt
+        </a>
+    </div>
+
     <?php endif; ?>
 
     <div class="card main-card mb-4">
@@ -608,7 +627,7 @@ href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.m
                         type="submit"
                         name="save_feedback"
                         class="btn btn-primary">
-                        Save Comparison
+                        Save Evaluation
                     </button>
                 </div>
 

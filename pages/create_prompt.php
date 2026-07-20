@@ -11,14 +11,12 @@ if (isset($_GET['restore']) && isset($_GET['prompt_id'])) {
     $promptId  = (int) $_GET['prompt_id'];
     $versionId = (int) $_GET['restore'];
 
-    // Get the version text to restore
     $vResult = $conn->query("SELECT * FROM prompt_versions WHERE version_id = $versionId AND prompt_id = $promptId");
     $version = $vResult->fetch_assoc();
 
     if ($version) {
         $restoredText = $conn->real_escape_string($version['version_text']);
 
-        // Update the prompt with restored text and increment version number
         $conn->query("
             UPDATE prompts
             SET prompt_text = '$restoredText',
@@ -27,7 +25,6 @@ if (isset($_GET['restore']) && isset($_GET['prompt_id'])) {
             WHERE prompt_id = $promptId
         ");
 
-        // Log the restore as a new version
         $conn->query("
             INSERT INTO prompt_versions (prompt_id, version_number, version_text)
             VALUES ($promptId, (SELECT version_number FROM prompts WHERE prompt_id = $promptId), '$restoredText')
@@ -56,7 +53,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $id          = isset($_POST['prompt_id']) ? (int) $_POST['prompt_id'] : 0;
 
     if ($id > 0) {
-        // UPDATE existing prompt
         $conn->query("
             UPDATE prompts
             SET title='$title', prompt_text='$prompt_text', category='$category', tags='$tags',
@@ -65,7 +61,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             WHERE prompt_id = $id
         ");
 
-        // Log new version
         $conn->query("
             INSERT INTO prompt_versions (prompt_id, version_number, version_text)
             VALUES ($id, (SELECT version_number FROM prompts WHERE prompt_id = $id), '$prompt_text')
@@ -73,14 +68,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         header("Location: create_prompt.php?edit=$id&msg=updated");
     } else {
-        // INSERT new prompt
         $conn->query("
             INSERT INTO prompts (title, prompt_text, category, tags)
             VALUES ('$title', '$prompt_text', '$category', '$tags')
         ");
         $newId = $conn->insert_id;
 
-        // Save initial version
         $conn->query("
             INSERT INTO prompt_versions (prompt_id, version_number, version_text)
             VALUES ($newId, 1, '$prompt_text')
@@ -114,8 +107,8 @@ if ($editPrompt) {
 // Flash messages
 if (isset($_GET['msg'])) {
     $msgs = [
-        'created'  => ['success', 'Prompt created successfully.'],
-        'updated'  => ['success', 'Prompt updated successfully.'],
+        'created'         => ['success', 'Prompt created successfully.'],
+        'updated'         => ['success', 'Prompt updated successfully.'],
         'restored'        => ['info',    'Previous version restored successfully.'],
         'version_deleted' => ['warning', 'Version deleted.'],
     ];
@@ -137,6 +130,31 @@ $conn->close();
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Create Prompt – Image Prompt Manager</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        /* Red border on invalid required fields after attempted submit */
+        .was-validated .form-control:invalid {
+            border-color: #dc3545;
+            box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
+        }
+
+        /* Character counter color states */
+        .char-count { font-size: 0.8rem; }
+        .char-count.warning { color: #fd7e14; }
+        .char-count.danger  { color: #dc3545; }
+
+        /* Version history text truncation */
+        .version-text {
+            max-width: 400px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            cursor: pointer;
+        }
+        .version-text.expanded {
+            white-space: normal;
+            overflow: visible;
+        }
+    </style>
 </head>
 <body class="bg-light">
 
@@ -157,24 +175,37 @@ $conn->close();
     <div class="card shadow-sm border-0 mb-4">
         <div class="card-body">
             <h5 class="card-title mb-3"><?php echo $editPrompt ? 'Edit Prompt' : 'New Prompt'; ?></h5>
-            <form method="POST" action="create_prompt.php">
+            <form method="POST" action="create_prompt.php" id="promptForm" novalidate>
                 <?php if ($editPrompt): ?>
                     <input type="hidden" name="prompt_id" value="<?php echo $editPrompt['prompt_id']; ?>">
                 <?php endif; ?>
 
+                <!-- Title -->
                 <div class="mb-3">
-                    <label for="title" class="form-label fw-semibold">Title <span class="text-danger">*</span></label>
-                    <input type="text" class="form-control" id="title" name="title" required
-                           placeholder="e.g. Sunset Over Mountains"
+                    <label for="title" class="form-label fw-semibold">
+                        Title <span class="text-danger">*</span>
+                    </label>
+                    <input type="text" class="form-control" id="title" name="title"
+                           placeholder="e.g. Sunset Over Mountains" required
                            value="<?php echo $editPrompt ? htmlspecialchars($editPrompt['title']) : ''; ?>">
+                    <div class="invalid-feedback">Title is required.</div>
                 </div>
 
+                <!-- Prompt Text with character counter -->
                 <div class="mb-3">
-                    <label for="prompt_text" class="form-label fw-semibold">Prompt Text <span class="text-danger">*</span></label>
-                    <textarea class="form-control" id="prompt_text" name="prompt_text" rows="4" required
+                    <label for="prompt_text" class="form-label fw-semibold">
+                        Prompt Text <span class="text-danger">*</span>
+                    </label>
+                    <textarea class="form-control" id="prompt_text" name="prompt_text"
+                              rows="4" required maxlength="1000"
                               placeholder="Describe the image you want to generate..."><?php echo $editPrompt ? htmlspecialchars($editPrompt['prompt_text']) : ''; ?></textarea>
+                    <div class="d-flex justify-content-between mt-1">
+                        <div class="invalid-feedback d-block" id="prompt_text_error" style="display:none!important;"></div>
+                        <small class="char-count text-muted ms-auto" id="charCount">0 / 1000</small>
+                    </div>
                 </div>
 
+                <!-- Category and Tags -->
                 <div class="row g-3">
                     <div class="col-md-6">
                         <label for="category" class="form-label fw-semibold">Category</label>
@@ -207,15 +238,16 @@ $conn->close();
     <?php if ($editPrompt && count($versions) > 0): ?>
     <div class="card shadow-sm border-0 mb-4">
         <div class="card-body">
-            <h5 class="card-title mb-3">🕓 Version History</h5>
+            <h5 class="card-title mb-1">🕓 Version History</h5>
+            <p class="text-muted small mb-3">Click on prompt text to expand. Restore any previous version or delete unwanted ones.</p>
             <div class="table-responsive">
                 <table class="table table-hover align-middle">
                     <thead class="table-light">
                         <tr>
-                            <th>Version</th>
+                            <th style="width:120px;">Version</th>
                             <th>Prompt Text</th>
-                            <th>Saved On</th>
-                            <th>Action</th>
+                            <th style="width:160px;">Saved On</th>
+                            <th style="width:160px;">Action</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -225,15 +257,15 @@ $conn->close();
                                 <span class="badge bg-info text-dark">v<?php echo $v['version_number']; ?></span>
                                 <?php echo $index === 0 ? '<span class="badge bg-success ms-1">Current</span>' : ''; ?>
                             </td>
-                            <td class="text-muted small" style="max-width: 400px;">
-                                <?php echo htmlspecialchars(substr($v['version_text'], 0, 120)) . (strlen($v['version_text']) > 120 ? '...' : ''); ?>
+                            <td>
+                                <span class="version-text text-muted small"
+                                      onclick="this.classList.toggle('expanded')"
+                                      title="Click to expand">
+                                    <?php echo htmlspecialchars($v['version_text']); ?>
+                                </span>
                             </td>
                             <td class="text-muted small">
-                                <?php
-                                echo !empty($v['modified_date'])
-                                    ? date('M j, Y g:i A', strtotime($v['modified_date']))
-                                    : '—';
-                                ?>
+                                <?php echo isset($v['created_at']) ? date('M j, Y g:i A', strtotime($v['created_at'])) : '—'; ?>
                             </td>
                             <td>
                                 <?php if ($index !== 0): ?>
@@ -265,5 +297,37 @@ $conn->close();
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    // Character counter for prompt text
+    const textarea = document.getElementById('prompt_text');
+    const charCount = document.getElementById('charCount');
+
+    function updateCharCount() {
+        const len = textarea.value.length;
+        const max = 1000;
+        charCount.textContent = len + ' / ' + max;
+        charCount.className = 'char-count ms-auto';
+        if (len > 900) {
+            charCount.classList.add('danger');
+        } else if (len > 750) {
+            charCount.classList.add('warning');
+        } else {
+            charCount.classList.add('text-muted');
+        }
+    }
+
+    textarea.addEventListener('input', updateCharCount);
+    updateCharCount(); // run on page load for edit mode
+
+    // Required field validation on submit
+    const form = document.getElementById('promptForm');
+    form.addEventListener('submit', function (e) {
+        if (!form.checkValidity()) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+        form.classList.add('was-validated');
+    });
+</script>
 </body>
 </html>

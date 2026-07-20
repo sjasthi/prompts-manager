@@ -27,12 +27,14 @@ if (isset($_POST['save_feedback'])) {
         );
 
         $stmt->execute();
+        $successMessage = "Your comparison evaluation was saved successfully!";
     }
 }
 
 $errorMessage = '';
 $promptTitle = '';
 $promptText = '';
+$successMessage = '';
 
 $pollinationsImage = '';
 $cloudflareImage = '';
@@ -229,7 +231,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 $outputReferences = json_encode([
                     'pollinations' => $pollinationsImage,
-                    'cloudflare' => $cloudflareImage
+                    'cloudflare' => 'stored_in_generated_images'
                 ]);
 
                 $comparisonStmt = $conn->prepare("
@@ -345,8 +347,13 @@ href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.m
 <div class="container page-wrapper">
 
     <a href="../index.php"
-       class="btn btn-outline-secondary mb-4">
-        &larr; Back to Dashboard
+    class="btn btn-outline-secondary mb-4">
+    ← Dashboard
+    </a>
+
+    <a href="comparison_history.php"
+    class="btn btn-outline-primary mb-4">
+    📚 Comparison History
     </a>
 
     <div class="text-center mb-5">
@@ -360,6 +367,12 @@ href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.m
     <?php if ($errorMessage !== ''): ?>
         <div class="alert alert-warning">
             <?php echo htmlspecialchars($errorMessage); ?>
+        </div>
+    <?php endif; ?>
+
+    <?php if ($successMessage !== ''): ?>
+        <div class="alert alert-success">
+            <?php echo htmlspecialchars($successMessage); ?>
         </div>
     <?php endif; ?>
 
@@ -400,10 +413,11 @@ href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.m
                 </select>
 
                 <div class="text-center mt-4">
-                    <button type="submit"
-                            class="btn compare-button">
-                        Compare Both Models
-                    </button>
+                   <button type="submit"
+                           name="compare_models"
+                           class="btn compare-button">
+                       Compare Both Models
+                   </button>
                 </div>
 
             </form>

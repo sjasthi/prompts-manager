@@ -155,6 +155,58 @@ Cloudflare AI image generation is now ready to use.
 
 ---
 
+## AI Model Comparison
+
+### Overview
+
+The AI Model Comparison feature allows users to evaluate how different AI image generation models respond to the same prompt. By generating images from multiple models using identical input, users can compare image quality, creativity, and overall performance side by side.
+
+This feature helps users determine which model produces the best results for a particular prompt and provides a way to document those evaluations for future reference.
+
+### Features
+
+* Select a saved prompt from the prompt library.
+* Generate images using multiple AI models with the same prompt.
+* Display generated images side by side for easy visual comparison.
+* Record the preferred model for each comparison.
+* Save evaluation notes describing the strengths or weaknesses of each model's output.
+* View previously saved comparisons in the Comparison History page.
+
+### Supported AI Models
+
+* **Pollinations AI**
+* **Cloudflare Workers AI (FLUX)**
+
+### Comparison Workflow
+
+1. Select a saved prompt.
+2. Click **Compare Both Models**.
+3. The application generates an image from each supported AI model.
+4. Review the generated images displayed side by side.
+5. Select the model that produced the preferred result.
+6. Enter optional evaluation notes.
+7. Save the evaluation for future reference.
+
+### Saved Information
+
+Each comparison stores:
+
+* The prompt that was used.
+* The AI models included in the comparison.
+* References to the generated outputs.
+* The selected preferred model.
+* User evaluation notes.
+* The date the comparison was performed.
+
+### Comparison History
+
+The Comparison History page allows users to review previously saved evaluations. Users can revisit past comparisons, review notes, identify the preferred model for each prompt, and track how different AI models perform across multiple prompt types.
+
+### Purpose
+
+This feature provides a structured way to evaluate AI-generated images rather than relying on visual inspection alone. By recording comparison results and user feedback, the application creates a history of model performance that can assist users in selecting the most appropriate AI model for future image generation tasks.
+
+
 # Performance Improvements
 
 To improve scalability as the application grows, several optimizations were implemented:

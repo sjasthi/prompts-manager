@@ -67,6 +67,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $apiUrl = "https://api.cloudflare.com/client/v4/accounts/" . CF_ACCOUNT_ID . "/ai/run/@cf/meta/llama-3.2-11b-vision-instruct";
 
                 $payload = json_encode([
+                    "max_tokens" => 512,
                     "messages" => [
                         [
                             "role" => "user",
@@ -193,9 +194,14 @@ $conn->close();
                     </div>
 
                     <div class="mb-3">
-                        <label class="form-label fw-semibold">Prompt Text</label>
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <label class="form-label fw-semibold mb-0">Prompt Text</label>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" id="copyBtn"
+                                    onclick="copyPrompt()">📋 Copy</button>
+                        </div>
                         <textarea name="prompt_text"
                                   class="form-control"
+                                  id="promptTextarea"
                                   rows="6"
                                   required><?php echo htmlspecialchars($generatedPrompt); ?></textarea>
                     </div>
@@ -236,6 +242,20 @@ $conn->close();
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    function copyPrompt() {
+        const textarea = document.getElementById('promptTextarea');
+        navigator.clipboard.writeText(textarea.value).then(function() {
+            const btn = document.getElementById('copyBtn');
+            btn.textContent = '✅ Copied!';
+            btn.classList.replace('btn-outline-secondary', 'btn-success');
+            setTimeout(function() {
+                btn.textContent = '📋 Copy';
+                btn.classList.replace('btn-success', 'btn-outline-secondary');
+            }, 2000);
+        });
+    }
+</script>
 
 </body>
 </html>

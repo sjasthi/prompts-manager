@@ -4,7 +4,7 @@ require_once 'includes/database.php';
 
 $conn = getConnection();
 
-if (isset($_GET['id'])) {
+if(isset($_GET['id'])){
 
     $id = intval($_GET['id']);
 
@@ -13,19 +13,14 @@ if (isset($_GET['id'])) {
         WHERE image_id = ?
     ");
 
-    $stmt->bind_param(
-        "i",
-        $id
-    );
+    $stmt->bind_param("i", $id);
 
-    $stmt->execute();
+    $success = $stmt->execute();
+
+    echo json_encode([
+        "success" => $success
+    ]);
 
 }
 
 $conn->close();
-
-header("Location: generate.php");
-
-exit;
-
-?>

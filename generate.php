@@ -1293,7 +1293,7 @@ $conn->close();
 
             <div class="modal-header">
 
-                <h5 class="modal-title">
+                <h5 class="modalTitle">
 
                     Latest Generated Image
 
@@ -1339,7 +1339,7 @@ $conn->close();
 
             <div class="modal-header border-0">
 
-                <h5 class="modal-title text-white">
+                <h5 class="modalTitle text-white">
 
                     Previous Generation
 
@@ -1481,8 +1481,17 @@ function showHistoryImage(index){
 
     currentImage = index;
 
-    document.getElementById("historyPreview").src =
-        galleryImages[currentImage].image;
+    const preview = document.getElementById("historyPreview");
+
+    preview.style.opacity = "0.3";
+
+    preview.onload = function(){
+
+        preview.style.opacity = "1";
+
+    };
+
+    preview.src = galleryImages[currentImage].image;
 
     document.getElementById("modalTitle").textContent =
         galleryImages[currentImage].title;
@@ -1499,7 +1508,7 @@ function showHistoryImage(index){
        galleryImages[currentImage].title
            .replace(/[^\w\s-]/g,"")
            .replace(/\s+/g,"_")
-           + ".jpg"
+           + ".jpg";
 
    const favoriteButton = document.getElementById("modalFavorite");
 
@@ -1512,9 +1521,6 @@ function showHistoryImage(index){
        favoriteButton.innerHTML = "🤍 Favorite";
 
    }
-
-   document.getElementById("modalDelete").href =
-       "delete_image.php?id=" + galleryImages[currentImage].id;
 
 }
 

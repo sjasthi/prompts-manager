@@ -33,10 +33,9 @@ if(isset($_GET['id'])){
 
     $row = $result->fetch_assoc();
 
-    echo json_encode([
-        "success" => true,
-        "favorite" => (bool)$row["favorite"]
-    ]);
+   echo json_encode([
+       "favorite" => (bool)$row['favorite']
+   ]);
 
 }
 

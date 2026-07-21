@@ -1180,9 +1180,9 @@ $conn->close();
 
                                     </a>
 
-                                    <a
-                                            href="favorite_image.php?id=<?= $history['image_id'] ?>"
-                                            class="btn btn-outline-warning btn-sm"
+                                    <button
+                                        class="btn btn-outline-warning btn-sm favoriteCard"
+                                        data-id="<?= $history['image_id'] ?>"
                                     >
 
                                         <?php if($history['favorite']): ?>
@@ -1195,20 +1195,19 @@ $conn->close();
 
                                         <?php endif; ?>
 
-                                    </a>
+                                    </button>
 
 
-                                    <a
-                                            href="delete_image.php?id=<?= $history['image_id'] ?>"
-                                            class="btn btn-outline-danger btn-sm"
-                                            onclick="return confirm('Delete this image?');"
-                                    >
+                                   <button
+                                       class="btn btn-outline-danger btn-sm deleteCard"
+                                       data-id="<?= $history['image_id'] ?>"
+                                   >
 
-                                        <i class="bi bi-trash"></i>
+                                       <i class="bi bi-trash"></i>
 
-                                        Delete
+                                       Delete
 
-                                    </a>
+                                   </button>
 
                                 </div>
 
@@ -1645,6 +1644,63 @@ document.getElementById("modalDelete").onclick = function(){
     });
 
 };
+document.querySelectorAll(".deleteCard").forEach(button => {
+
+    button.addEventListener("click", function(){
+
+        if(!confirm("Delete this image?")){
+
+            return;
+
+        }
+
+        const imageId = this.dataset.id;
+
+        fetch("delete_image.php?id=" + imageId)
+
+        .then(response => response.json())
+
+        .then(data => {
+
+            if(data.success){
+
+                this.closest(".col-lg-4").remove();
+
+            }
+
+        });
+
+    });
+
+});
+
+document.querySelectorAll(".favoriteCard").forEach(button => {
+
+    button.addEventListener("click", function(){
+
+        const imageId = this.dataset.id;
+
+        fetch("favorite_image.php?id=" + imageId)
+
+        .then(response => response.json())
+
+        .then(data => {
+
+            if(data.favorite){
+
+                this.innerHTML = "⭐ Favorited";
+
+            }else{
+
+                this.innerHTML = "☆ Favorite";
+
+            }
+
+        });
+
+    });
+
+});
 
 </script>
 

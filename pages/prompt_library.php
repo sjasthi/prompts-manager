@@ -1,7 +1,6 @@
 <?php
 require_once '../includes/database.php';
 require_once '../includes/config.php';
-
 $conn = getConnection();
 $message = '';
 
@@ -34,13 +33,12 @@ $conn->close();
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Prompt Library – Image Prompt Manager</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
 </head>
 <body class="bg-light">
 
 <div class="container mt-4 mb-5">
-
     <a href="../index.php" class="text-decoration-none text-muted small">&larr; Back to Home</a>
-
     <h2 class="fw-bold mt-2 mb-1">📚 Prompt Library</h2>
     <p class="text-muted mb-4">Browse, search, and manage all your saved image prompts.</p>
 
@@ -52,7 +50,7 @@ $conn->close();
 
     <?php if ($prompts && $prompts->num_rows > 0): ?>
     <div class="table-responsive">
-        <table class="table table-hover align-middle bg-white shadow-sm rounded">
+        <table id="promptsTable" class="table table-hover align-middle bg-white shadow-sm rounded">
             <thead class="table-light">
                 <tr>
                     <th>Title</th>
@@ -96,9 +94,26 @@ $conn->close();
     <?php else: ?>
         <p class="text-muted">No prompts yet. <a href="create_prompt.php">Create your first one</a>.</p>
     <?php endif; ?>
-
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+<script>
+    $(document).ready(function() {
+        $('#promptsTable').DataTable({
+            columnDefs: [
+                { orderable: false, targets: 5 } // Disable sorting on Actions column
+            ],
+            language: {
+                search: "Search prompts:",
+                lengthMenu: "Show _MENU_ prompts per page",
+                info: "Showing _START_ to _END_ of _TOTAL_ prompts",
+                emptyTable: "No prompts found"
+            }
+        });
+    });
+</script>
 </body>
 </html>

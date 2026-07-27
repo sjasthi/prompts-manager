@@ -161,7 +161,45 @@ Cloudflare AI image generation is now ready to use.
 
 ---
 
-## AI Model Comparison
+## Image to Prompt
+
+### How to Test
+
+1. Start the application using the command in the Running Locally section.
+2. Open:
+
+```text
+http://localhost:8000/pages/image_to_prompt.php
+```
+
+3. Upload a JPG, PNG, or WEBP image up to 10 MB.
+4. Click **Generate Prompt**.
+5. Review or edit the generated prompt.
+6. Click **Save Prompt** to add it to the Prompt Library.
+
+### One-Time Cloudflare Model Agreement
+
+A new Cloudflare account must accept the vision model agreement before using Image to Prompt. From the project folder, run:
+
+```bash
+php -r 'require "includes/config.php"; $url = "https://api.cloudflare.com/client/v4/accounts/" . CF_ACCOUNT_ID . "/ai/run/@cf/meta/llama-3.2-11b-vision-instruct"; $ch = curl_init($url); curl_setopt_array($ch, [CURLOPT_RETURNTRANSFER => true, CURLOPT_POST => true, CURLOPT_HTTPHEADER => ["Authorization: Bearer " . CF_API_TOKEN, "Content-Type: application/json"], CURLOPT_POSTFIELDS => json_encode(["prompt" => "agree"])]); $response = curl_exec($ch); echo "HTTP " . curl_getinfo($ch, CURLINFO_HTTP_CODE) . PHP_EOL . $response . PHP_EOL;'
+```
+
+A response containing **“Thank you for agreeing to this model's terms”** confirms that setup is complete, even if the response displays HTTP 403.
+
+## Testing Model Comparison
+
+1. Make sure at least one prompt exists in the Prompt Library.
+2. Open:
+
+```text
+http://localhost:8000/pages/compare_models.php
+```
+
+3. Select a saved prompt.
+4. Click **Compare Both Models**.
+5. Review the Pollinations AI and Cloudflare AI results.
+6. Select the preferred model, add optional notes, and save the comparison.
 
 ### Overview
 

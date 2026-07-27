@@ -58,8 +58,33 @@ $promptsResult = $conn->query("
 
 $previousImages = [];
 
+
+/*
+|--------------------------------------------------------------------------
+| Load Prompt List
+|--------------------------------------------------------------------------
+*/
+
+$promptList = [];
+
+$promptQuery = $conn->query("
+    SELECT
+        prompt_id,
+        title
+    FROM prompts
+    ORDER BY title
+");
+
+while($row = $promptQuery->fetch_assoc()){
+
+    $promptList[] = $row;
+
+}
+
 $search = $_GET['search'] ?? "";
 $modelFilter = $_GET['filter_model'] ?? "";
+$promptFilter = $_GET['filter_prompt'] ?? "";
+$selectedPrompt = $_GET['prompt'] ?? "";
 
 $page = max(1, intval($_GET['page'] ?? 1));
 
@@ -73,12 +98,58 @@ $countSql = "
     WHERE generation_status = 'success'
 ";
 
-$totalImages = $conn->query($countSql)->fetch_row()[0];
+$countParams = [];
+$countTypes = "";
+
+if ($search !== "") {
+
+    $countSql .= " AND (image_title LIKE ? OR model_name LIKE ?)";
+
+    $countParams[] = "%$search%";
+    $countParams[] = "%$search%";
+    $countTypes .= "ss";
+}
+
+if ($modelFilter !== "") {
+
+    $countSql .= " AND model_name = ?";
+
+    $countParams[] = $modelFilter;
+    $countTypes .= "s";
+}
+
+if ($promptFilter !== "") {
+
+    $countSql .= " AND prompt_id = ?";
+
+    $countParams[] = $promptFilter;
+    $countTypes .= "i";
+}
+
+if(isset($_GET['favorites'])){
+
+    $countSql .= " AND favorite = 1";
+
+}
+
+$countStmt = $conn->prepare($countSql);
+
+if(!empty($countParams)){
+
+    $countStmt->bind_param($countTypes, ...$countParams);
+
+}
+
+$countStmt->execute();
+
+$totalImages = $countStmt->get_result()->fetch_row()[0];
+
 $totalPages = max(1, ceil($totalImages / $imagesPerPage));
 
 $sql = "
     SELECT
         image_id,
+        prompt_id,
         image_title,
         image_path,
         model_name,
@@ -116,6 +187,16 @@ if ($modelFilter !== "") {
     $types .= "s";
 
 }
+
+if ($promptFilter !== "") {
+
+    $sql .= " AND prompt_id = ? ";
+
+    $params[] = $promptFilter;
+    $types .= "i";
+
+}
+
 if(isset($_GET['favorites'])) {
 
     $sql .= " AND favorite = 1 ";
@@ -152,12 +233,6 @@ while ($history = $historyQuery->fetch_assoc()) {
     $previousImages[] = $history;
 
 }
-
-while ($history = $historyQuery->fetch_assoc()) {
-    $previousImages[] = $history;
-}
-
-
 /*
 |--------------------------------------------------------------------------
 | Default Variables
@@ -237,11 +312,45 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
                     $seed = random_int(1, 999999999);
 
-                    $imageUrl =
-                            "https://image.pollinations.ai/prompt/"
-                            . urlencode($promptText)
-                            . "?seed="
-                            . $seed;
+                    $pollinationsUrl =
+                        "https://image.pollinations.ai/prompt/"
+                        . urlencode($promptText)
+                        . "?seed="
+                        . $seed;
+
+                    // Download the image
+                    $imageData = @file_get_contents($pollinationsUrl);
+
+                    if ($imageData === false) {
+                        throw new Exception("Unable to download image from Pollinations.");
+                    }
+
+                    if($imageData === false){
+
+                        throw new Exception("Failed to download image from Pollinations.");
+
+                    }
+
+                    // Make sure uploads folder exists
+                    if(!is_dir("uploads")){
+
+                        mkdir("uploads", 0777, true);
+
+                    }
+
+                    // Create unique filename
+                    $filename =
+                        "uploads/"
+                        . time()
+                        . "_"
+                        . uniqid()
+                        . ".png";
+
+                    // Save image locally
+                    file_put_contents($filename, $imageData);
+
+                    // Store local path instead of Pollinations URL
+                    $imageUrl = $filename;
 
                     $modelName = "Pollinations AI";
 
@@ -717,7 +826,7 @@ $conn->close();
 
 
 
-    <div class="card generator-card">
+    <div id="generatorCard" class="card generator-card">
 
 
         <div class="card-body p-4">
@@ -752,7 +861,10 @@ $conn->close();
 
                             <?php while ($prompt = $promptsResult->fetch_assoc()): ?>
 
-                                <option value="<?= $prompt['prompt_id'] ?>">
+                                <option
+                                    value="<?= $prompt['prompt_id'] ?>"
+                                    <?= ($selectedPrompt == $prompt['prompt_id']) ? 'selected' : '' ?>
+                                >
 
                                     <?= htmlspecialchars($prompt['title']) ?>
 
@@ -836,7 +948,7 @@ $conn->close();
 
 <?php if ($imageUrl): ?>
 
-    <div class="card generator-card mt-4">
+    <div id="latestImageCard" class="card generator-card mt-4">
 
         <div class="card-body">
 
@@ -916,34 +1028,37 @@ $conn->close();
 
                 </a>
 
-                <a
-                        href="favorite_image.php?id=<?= $latestImageId ?>"
-                        class="btn btn-outline-warning btn-sm">
+               <button
+                   type="button"
+                   id="latestFavorite"
+                   class="btn btn-outline-warning"
+                   data-id="<?= $latestImageId ?>"
+               >
 
-                    <?php if($latestFavorite): ?>
+                   <?php if($latestFavorite): ?>
 
-                        ⭐ Favorited
+                       ⭐ Favorited
 
-                    <?php else: ?>
+                   <?php else: ?>
 
-                        ☆ Favorite
+                       ☆ Favorite
 
-                    <?php endif; ?>
+                   <?php endif; ?>
 
-                </a>
+               </button>
 
-
-                <a
-                        href="delete_image.php?id=<?= $latestImageId ?>"
-                        class="btn btn-danger"
-                        onclick="return confirm('Delete this image?');"
+                <button
+                    type="button"
+                    id="latestDelete"
+                    class="btn btn-danger"
+                    data-id="<?= $latestImageId ?>"
                 >
 
                     <i class="bi bi-trash"></i>
 
                     Delete
 
-                </a>
+                </button>
 
                 <button
 
@@ -1003,6 +1118,34 @@ $conn->close();
                 >
 
             </div>
+
+        <div class="col-md-3">
+
+            <select
+                name="filter_prompt"
+                class="form-select"
+            >
+
+                <option value="">
+                    All Prompts
+                </option>
+
+                <?php foreach($promptList as $prompt): ?>
+
+                    <option
+                        value="<?= $prompt['prompt_id'] ?>"
+                        <?= ($promptFilter == $prompt['prompt_id']) ? 'selected' : '' ?>
+                    >
+
+                        <?= htmlspecialchars($prompt['title']) ?>
+
+                    </option>
+
+                <?php endforeach; ?>
+
+            </select>
+
+        </div>
 
 
             <div class="col-md-4">
@@ -1110,7 +1253,10 @@ $conn->close();
 
                     <div class="col-lg-4 col-md-6 mb-4">
 
-                        <div class="card history-card shadow-sm h-100 position-relative">
+                        <div
+                            id="historyCard<?= $history['image_id'] ?>"
+                            class="card history-card shadow-sm h-100"
+                        >
 
                             <?php if ($history['favorite']): ?>
 
@@ -1306,7 +1452,10 @@ $conn->close();
 
             </div>
 
-            <div class="modal-body text-center">
+            <div
+                class="modal-body d-flex justify-content-center align-items-center"
+                style="height:85vh; background:#111;"
+            >
 
                 <?php if ($imageUrl): ?>
 
@@ -1369,11 +1518,16 @@ $conn->close();
                 <!-- Image -->
 
                 <img
-                        id="historyPreview"
-                        class="img-fluid"
-                        style="max-height:88vh;"
-                        src=""
-                        alt="History Preview"
+                    id="historyPreview"
+                    class="rounded"
+                    src=""
+                    alt="History Preview"
+                    style="
+                        max-width:100%;
+                        max-height:100%;
+                        object-fit:contain;;
+                        background:#111;
+                    "
                 >
 
                 <div class="text-white mt-4">
@@ -1701,6 +1855,91 @@ document.querySelectorAll(".favoriteCard").forEach(button => {
     });
 
 });
+
+window.addEventListener("load", function(){
+
+    const params = new URLSearchParams(window.location.search);
+
+    if(params.has("prompt")){
+
+        document.getElementById("generatorCard").scrollIntoView({
+            behavior: "smooth",
+            block: "start"
+        });
+
+    }
+
+});
+
+const latestFavorite = document.getElementById("latestFavorite");
+
+if(latestFavorite){
+
+    latestFavorite.addEventListener("click", function(){
+
+        fetch("favorite_image.php?id=" + this.dataset.id)
+
+        .then(response => response.json())
+
+        .then(data => {
+
+            if(data.favorite){
+
+                this.innerHTML = "⭐ Favorited";
+
+            }else{
+
+                this.innerHTML = "☆ Favorite";
+
+            }
+
+        });
+
+    });
+
+}
+
+const latestDelete = document.getElementById("latestDelete");
+
+if(latestDelete){
+
+    latestDelete.addEventListener("click", function(){
+
+        if(!confirm("Delete this image?")){
+
+            return;
+
+        }
+
+        fetch("delete_image.php?id=" + this.dataset.id)
+
+        .then(response => response.json())
+
+        .then(data => {
+
+            if(data.success){
+
+                // Remove the latest generated image card
+                document.getElementById("latestImageCard").remove();
+
+                // Remove the same image from Previous Generations
+                const historyCard = document.getElementById(
+                    "historyCard" + this.dataset.id
+                );
+
+                if(historyCard){
+
+                    historyCard.closest(".col-lg-4").remove();
+
+                }
+
+            }
+
+        });
+
+    });
+
+}
 
 </script>
 

@@ -253,11 +253,23 @@ $conn->close();
                     <td><span class="badge bg-info text-dark">v<?php echo $row['version_number']; ?></span></td>
                     <td class="text-muted small"><?php echo date('M j, Y', strtotime($row['created_at'])); ?></td>
                     <td>
+
                         <a href="create_prompt.php?edit=<?php echo $row['prompt_id']; ?>"
-                           class="btn btn-sm btn-outline-primary me-1">Edit</a>
+                           class="btn btn-sm btn-outline-primary me-1">
+                            Edit
+                        </a>
+
+                        <a href="../generate.php?prompt=<?php echo $row['prompt_id']; ?>"
+                           class="btn btn-sm btn-success me-1">
+                            Generate
+                        </a>
+
                         <a href="prompt_library.php?delete=<?php echo $row['prompt_id']; ?>"
                            class="btn btn-sm btn-outline-danger"
-                           onclick="return confirm('Delete this prompt?')">Delete</a>
+                           onclick="return confirm('Delete this prompt?')">
+                            Delete
+                        </a>
+
                     </td>
                 </tr>
                 <?php endwhile; ?>

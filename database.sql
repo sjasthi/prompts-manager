@@ -23,24 +23,34 @@ CREATE TABLE prompt_versions (
     FOREIGN KEY (prompt_id) REFERENCES prompts(prompt_id) ON DELETE CASCADE
 );
 
-CREATE TABLE generated_images (
-    image_id INT AUTO_INCREMENT PRIMARY KEY,
-    prompt_id INT NOT NULL,
-    model_name VARCHAR(100),
-    image_path LONGTEXT,
-    generation_date DATETIME DEFAULT CURRENT_TIMESTAMP,
-    generation_status ENUM('success', 'failure') DEFAULT 'success',
-    FOREIGN KEY (prompt_id) REFERENCES prompts(prompt_id) ON DELETE CASCADE
-);
+    CREATE TABLE generated_images (
+                                      image_id INT AUTO_INCREMENT PRIMARY KEY,
+                                      prompt_id INT NOT NULL,
+                                      image_title VARCHAR(255),
+                                      model_name VARCHAR(100),
+                                      image_path LONGTEXT,
+                                      generation_date DATETIME DEFAULT CURRENT_TIMESTAMP,
+                                      generation_status ENUM('success', 'failure') DEFAULT 'success',
+                                      favorite TINYINT(1) NOT NULL DEFAULT 0,
+                                      FOREIGN KEY (prompt_id) REFERENCES prompts(prompt_id) ON DELETE CASCADE
+    );
 
 CREATE TABLE model_comparisons (
     comparison_id INT AUTO_INCREMENT PRIMARY KEY,
     prompt_id INT NOT NULL,
     models_used VARCHAR(255),
     comparison_date DATETIME DEFAULT CURRENT_TIMESTAMP,
-    output_references TEXT,
+    output_references LONGTEXT,
     FOREIGN KEY (prompt_id) REFERENCES prompts(prompt_id) ON DELETE CASCADE
 );
+    CREATE TABLE comparison_feedback (
+                                         feedback_id INT AUTO_INCREMENT PRIMARY KEY,
+                                         prompt_id INT NOT NULL,
+                                         selected_model VARCHAR(100) NOT NULL,
+                                         notes TEXT,
+                                         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                                         FOREIGN KEY (prompt_id) REFERENCES prompts(prompt_id) ON DELETE CASCADE
+    );
 
 INSERT INTO prompts (title, prompt_text, category, tags, favorite_status) VALUES
 ('Sunset Over Mountains', 'A breathtaking sunset over snow-capped mountains, golden hour lighting, photorealistic', 'Landscape', 'sunset,mountains,nature', 1),

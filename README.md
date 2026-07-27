@@ -76,6 +76,12 @@ define('CF_API_TOKEN', 'YOUR_API_TOKEN');
 Replace each placeholder with your own MySQL and Cloudflare credentials.
 
 ---
+# Running Locally
+
+From the project’s root folder, start the PHP development server with:
+
+```bash
+php -d upload_max_filesize=10M -d post_max_size=12M -S localhost:8000
 
 # Cloudflare AI Setup
 

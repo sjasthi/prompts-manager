@@ -2,9 +2,46 @@
 require_once 'includes/database.php';
 $conn = getConnection();
 
-$result = $conn->query("SELECT COUNT(*) as total FROM prompts");
-$row = $result->fetch_assoc();
-$promptCount = $row['total'];
+// Total prompts
+$result = $conn->query("
+    SELECT COUNT(*) AS total
+    FROM prompts
+    WHERE status = 'active'
+");
+
+$promptCount = (int) $result->fetch_assoc()['total'];
+
+
+// Total successfully generated images
+$result = $conn->query("
+    SELECT COUNT(*) AS total
+    FROM generated_images
+    WHERE generation_status = 'success'
+");
+
+$imageCount = (int) $result->fetch_assoc()['total'];
+
+
+// Total favorite images
+$result = $conn->query("
+    SELECT COUNT(*) AS total
+    FROM generated_images
+    WHERE favorite = 1
+      AND generation_status = 'success'
+");
+
+$favoriteCount = (int) $result->fetch_assoc()['total'];
+
+
+// Number of AI models that have generated images
+$result = $conn->query("
+    SELECT COUNT(DISTINCT model_name) AS total
+    FROM generated_images
+    WHERE generation_status = 'success'
+");
+
+$modelCount = (int) $result->fetch_assoc()['total'];
+
 $conn->close();
 $pageTitle = "Image Prompt Manager";
 
@@ -56,10 +93,21 @@ $sections = [
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+
     <title><?php echo $pageTitle; ?></title>
+
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <link
+        rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"
+    >
+
+    <link rel="stylesheet" href="assets/css/style.css">
+
 </head>
-<body class="bg-light">
+<body>
+    <?php include 'includes/navbar.php'; ?>
 
 <!-- Under Development Banner -->
 <div class="alert alert-warning alert-dismissible fade show text-center rounded-0 mb-0 py-2" role="alert">
@@ -67,16 +115,144 @@ $sections = [
     <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
 </div>
 
-<div class="container mt-5">
+<div class="container py-5">
 
     <!-- Header -->
-    <div class="text-center mb-5">
-        <h1 class="fw-bold">🖼️ Image Prompt Manager</h1>
-        <p class="lead text-muted">
-            Create, organize, version, and evaluate AI image prompts — all in one place.
+    <div class="hero-card text-center mb-5">
+
+        <h1 class="hero-title">
+            🖼 Image Prompt Manager
+        </h1>
+
+        <p class="hero-subtitle mt-3">
+
+            Generate, organize, version, and compare AI image prompts
+            from one central workspace.
+
         </p>
+
+    <div class="mt-4">
+
+        <a href="generate.php"
+           class="btn btn-primary btn-lg quick-btn me-3">
+
+            🎨 Generate Images
+
+        </a>
+
+        <a href="pages/prompt_library.php"
+           class="btn btn-outline-dark btn-lg quick-btn">
+
+            📚 Prompt Library
+
+        </a>
+
+    </div>
+</div>
+
+<div class="row g-4 mb-5">
+
+    <div class="col-sm-6 col-lg-3">
+
+        <div class="stats-card">
+
+            <div class="stats-icon">
+                📚
+            </div>
+
+            <div class="stats-number">
+                <?php echo number_format($promptCount); ?>
+            </div>
+
+            <div class="stats-label">
+                Active Prompts
+            </div>
+
+        </div>
+
     </div>
 
+
+    <div class="col-sm-6 col-lg-3">
+
+        <div class="stats-card">
+
+            <div class="stats-icon">
+                🖼️
+            </div>
+
+            <div class="stats-number">
+                <?php echo number_format($imageCount); ?>
+            </div>
+
+            <div class="stats-label">
+                Images Generated
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <div class="col-sm-6 col-lg-3">
+
+        <div class="stats-card">
+
+            <div class="stats-icon">
+                ⭐
+            </div>
+
+            <div class="stats-number">
+                <?php echo number_format($favoriteCount); ?>
+            </div>
+
+            <div class="stats-label">
+                Favorite Images
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <div class="col-sm-6 col-lg-3">
+
+        <div class="stats-card">
+
+            <div class="stats-icon">
+                🤖
+            </div>
+
+            <div class="stats-number">
+                <?php echo number_format($modelCount); ?>
+            </div>
+
+            <div class="stats-label">
+                AI Models Used
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<div class="text-center">
+
+    <h2 class="section-title">
+
+        Explore Features
+
+    </h2>
+
+    <p class="section-sub">
+
+        Everything you need to build, organize,
+        and evaluate AI image prompts.
+
+    </p>
+
+</div>
     <!-- Feature Cards -->
     <div class="row g-4">
         <?php foreach ($sections as $section): ?>
@@ -85,7 +261,7 @@ $sections = [
                 <div class="card h-100 shadow-sm border-0 hover-card">
                     <div class="card-body">
                         <div class="d-flex justify-content-between align-items-start mb-2">
-                            <span class="fs-2"><?php echo $section['icon']; ?></span>
+                            <span class="feature-icon"><?php echo $section['icon']; ?></span>
                             <span class="badge <?php echo $section['badge_class']; ?>">
                                 <?php echo $section['status']; ?>
                             </span>
@@ -94,7 +270,9 @@ $sections = [
                         <p class="card-text text-muted small"><?php echo $section['desc']; ?></p>
                     </div>
                     <div class="card-footer bg-transparent border-0">
-                        <small class="text-primary">Open &rarr;</small>
+                      <small class="text-primary fw-semibold">
+                          Launch →
+                      </small>
                     </div>
                 </div>
             </a>
@@ -104,24 +282,13 @@ $sections = [
 
     <!-- Footer note -->
 <p class="text-center text-muted small mt-5">
-    ICS499 Capstone Project &mdash; Image Prompt Manager &mdash; Phase 3
+    ICS499 Capstone Project &mdash; Image Prompt Manager &mdash; Group 2 2026
 </p>
 <p class="text-center text-muted">
     📦 <?php echo $promptCount; ?> prompts currently in the library
 </p>
 
 </div>
-
-<style>
-    .hover-card {
-        transition: transform 0.15s ease, box-shadow 0.15s ease;
-        cursor: pointer;
-    }
-    .hover-card:hover {
-        transform: translateY(-4px);
-        box-shadow: 0 8px 24px rgba(0,0,0,0.12) !important;
-    }
-</style>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>

@@ -271,16 +271,13 @@ if (
           content="width=device-width, initial-scale=1">
 
     <title>Compare AI Models</title>
-<link rel="stylesheet"
-href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    <link
-        href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
-        rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 
+<link rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+<link rel="stylesheet" href="../assets/css/style.css">
     <style>
-        body {
-            background: #f4f6fb;
-        }
 
         .page-wrapper {
             max-width: 1200px;
@@ -345,7 +342,7 @@ href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.m
 </head>
 
 <body>
-
+<?php include '../includes/navbar.php'; ?>
 <div class="loading-overlay" id="loading">
     <div class="spinner"></div>
     <h4 class="mt-4">Generating both images...</h4>

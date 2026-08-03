@@ -128,16 +128,32 @@ $conn->close();
     <title>Image to Prompt</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <link rel="stylesheet"
+          href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+    <link rel="stylesheet" href="../assets/css/style.css">
 </head>
 
-<body class="bg-light">
+<body>
 
-<div class="container mt-4 mb-5">
+<?php include '../includes/navbar.php'; ?>
 
-    <a href="../index.php" class="text-decoration-none text-muted small">&larr; Back to Home</a>
+<div class="container py-5">
 
-    <h2 class="fw-bold mt-2">🔍 Image to Prompt</h2>
-    <p class="text-muted">Upload an image and let AI reverse-engineer a descriptive prompt from it.</p>
+    <div class="page-card">
+
+        <a href="../index.php" class="text-decoration-none text-muted small">
+            &larr; Back to Home
+        </a>
+
+        <h1 class="page-title mt-3 mb-2">
+            Image to Prompt
+        </h1>
+
+        <p class="page-subtitle">
+            Upload an image and let AI reverse-engineer a descriptive prompt from it.
+        </p>
 
     <?php if ($error != ""): ?>
         <div class="alert alert-danger"><?php echo htmlspecialchars($error); ?></div>
@@ -239,6 +255,7 @@ $conn->close();
 
     <a href="prompt_library.php" class="btn btn-outline-secondary">📚 View Prompt Library</a>
 
+    </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>

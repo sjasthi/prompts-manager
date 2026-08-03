@@ -130,6 +130,11 @@ $conn->close();
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Create Prompt – Image Prompt Manager</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <link rel="stylesheet"
+          href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+    <link rel="stylesheet" href="../assets/css/style.css">
     <style>
         /* Red border on invalid required fields after attempted submit */
         .was-validated .form-control:invalid {
@@ -156,17 +161,25 @@ $conn->close();
         }
     </style>
 </head>
-<body class="bg-light">
+<body>
 
-<div class="container mt-4 mb-5">
+<?php include '../includes/navbar.php'; ?>
+
+<div class="container py-5">
+
+    <div class="page-card">
 
     <a href="../index.php" class="text-decoration-none text-muted small">&larr; Back to Home</a>
 
-    <h2 class="fw-bold mt-2 mb-1">
-        <?php echo $editPrompt ? '✏️ Edit Prompt' : '✏️ Create Prompt'; ?>
-    </h2>
-    <p class="text-muted mb-4">
-        <?php echo $editPrompt ? 'Update the prompt details below.' : 'Write a new image prompt with a title, tags, category, and version history built in.'; ?>
+    <h1 class="page-title mt-3 mb-2">
+        <?php echo $editPrompt ? 'Edit Prompt' : 'Create Prompt'; ?>
+    </h1>
+
+    <p class="page-subtitle">
+        <?php echo $editPrompt
+            ? 'Update the prompt details below while keeping the previous versions available.'
+            : 'Write a reusable image prompt with a title, category, tags, and version history.';
+        ?>
     </p>
 
     <?php echo $message; ?>
@@ -294,6 +307,7 @@ $conn->close();
 
     <a href="prompt_library.php" class="btn btn-outline-secondary">📚 View Prompt Library</a>
 
+ </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>

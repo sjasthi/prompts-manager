@@ -97,6 +97,11 @@ $conn->close();
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Prompt Library – Image Prompt Manager</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <link rel="stylesheet"
+          href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+    <link rel="stylesheet" href="../assets/css/style.css">
     <style>
         #promptsTable {
             min-width: 1050px;
@@ -130,12 +135,21 @@ $conn->close();
     </style>
 
     </head>
-<body class="bg-light">
+<body>
+<?php include '../includes/navbar.php'; ?>
+<div class="container py-5">
+    <div class="page-card">
+   <a href="../index.php" class="text-decoration-none text-muted small">
+       &larr; Back to Home
+   </a>
 
-<div class="container mt-4 mb-5">
-    <a href="../index.php" class="text-decoration-none text-muted small">&larr; Back to Home</a>
-    <h2 class="fw-bold mt-2 mb-1">📚 Prompt Library</h2>
-    <p class="text-muted mb-4">Browse, search, and manage all your saved image prompts.</p>
+   <h1 class="page-title mt-3 mb-2">
+       Prompt Library
+   </h1>
+
+   <p class="page-subtitle">
+       Browse, search, and manage all your saved image prompts.
+   </p>
 
     <?php echo $message; ?>
 <form method="GET" action="prompt_library.php" class="card card-body shadow-sm border-0 mb-3">
@@ -317,6 +331,7 @@ $conn->close();
     <?php else: ?>
         <p class="text-muted">No prompts yet. <a href="create_prompt.php">Create your first one</a>.</p>
     <?php endif; ?>
+    </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>

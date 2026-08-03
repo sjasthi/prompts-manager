@@ -523,11 +523,9 @@ $conn->close();
     <link rel="stylesheet"
           href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
 
-    <style>
+    <link rel="stylesheet" href="assets/css/style.css">
 
-        body{
-            background:#f4f6fb;
-        }
+    <style>
 
         .page-wrapper{
             max-width:1200px;
@@ -686,16 +684,13 @@ $conn->close();
 </head>
 
 <body>
+<?php include 'includes/navbar.php'; ?>
 
-
-<div class="container mt-4">
+<div class="container pt-4">
 
     <a href="index.php" class="btn btn-outline-secondary">
-
         <i class="bi bi-arrow-left"></i>
-
         Back to Dashboard
-
     </a>
 
 </div>
@@ -1366,13 +1361,30 @@ $conn->close();
                 <?php endforeach; ?>
 
             </div>
+
+        <?php
+
+        $paginationParams = [
+            'search' => $search,
+            'filter_model' => $modelFilter,
+            'filter_prompt' => $promptFilter
+        ];
+
+        if(isset($_GET['favorites'])){
+            $paginationParams['favorites'] = 1;
+        }
+
+        ?>
+
         <div class="d-flex justify-content-between align-items-center mt-4">
 
             <?php if ($page > 1): ?>
 
                 <a
                     class="btn btn-outline-primary"
-                    href="?page=<?= $page - 1 ?>&search=<?= urlencode($search) ?>&filter_model=<?= urlencode($modelFilter) ?>"
+                    href="?<?= http_build_query(
+                        array_merge($paginationParams, ['page' => $page - 1])
+                    ) ?>"
                 >
                     ← Previous
                 </a>
@@ -1401,7 +1413,9 @@ $conn->close();
 
                 <a
                     class="btn btn-outline-primary"
-                    href="?page=<?= $page + 1 ?>&search=<?= urlencode($search) ?>&filter_model=<?= urlencode($modelFilter) ?>"
+                    href="?<?= http_build_query(
+                        array_merge($paginationParams, ['page' => $page + 1])
+                    ) ?>"
                 >
                     Next →
                 </a>

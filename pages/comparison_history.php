@@ -40,56 +40,48 @@ $result = $conn->query($query);
 
 <head>
 
-<meta charset="UTF-8">
+    <meta charset="UTF-8">
 
-<meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
 
-<title>Comparison History</title>
+    <title>Comparison History</title>
 
+    <link
+        href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+        rel="stylesheet"
+    >
 
-<link
-href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
-rel="stylesheet">
+    <link rel="stylesheet" href="../assets/css/style.css">
 
+    <style>
 
-<style>
+        .page-wrapper {
+            max-width:1200px;
+            margin:40px auto;
+        }
 
-body {
-    background:#f4f6fb;
-}
+        .card {
+            border:none;
+            border-radius:18px;
+            box-shadow:0 8px 25px rgba(0,0,0,.08);
+        }
 
-
-.page-wrapper {
-    max-width:1200px;
-    margin:40px auto;
-}
-
-
-.card {
-    border:none;
-    border-radius:18px;
-    box-shadow:0 8px 25px rgba(0,0,0,.08);
-}
-
-
-</style>
-
+    </style>
 
 </head>
 
-
 <body>
 
+<?php include '../includes/navbar.php'; ?>
 
-<div class="container page-wrapper">
+<div class="container page-wrapper py-4">
 
-
-<a href="../index.php"
-class="btn btn-outline-secondary mb-4">
-
-← Back Dashboard
-
-</a>
+    <a
+        href="../index.php"
+        class="btn btn-outline-secondary mb-4"
+    >
+        ← Back to Dashboard
+    </a>
 
 
 <h1 class="fw-bold mb-4">

@@ -48,7 +48,7 @@ $pageTitle = "Image Prompt Manager";
 $sections = [
     [
         "href"        => "pages/prompt_library.php",
-        "icon"        => "📚",
+        "icon"        => "bi-collection",
         "title"       => "Prompt Library",
         "desc"        => "Browse, search, and manage all your saved image prompts. Filter by tag, category, or model.",
         "status"      => "Active",
@@ -56,7 +56,7 @@ $sections = [
     ],
     [
         "href"        => "pages/create_prompt.php",
-        "icon"        => "✏️",
+        "icon"        => "bi-pencil-square",
         "title"       => "Create Prompt",
         "desc"        => "Write a new image prompt with a title, tags, category, and version history built in.",
         "status"      => "Active",
@@ -64,28 +64,28 @@ $sections = [
     ],
     [
         "href"        => "generate.php",
-        "icon"        => "🎨",
+        "icon"        => "bi-image",
         "title"       => "Generate Image",
         "desc"        => "Select a prompt and an AI model to generate images instantly.",
         "status"      => "Active",
         "badge_class" => "bg-success",
     ],
-   [
-       "href"        => "pages/compare_models.php",
-       "icon"        => "⚖️",
-       "title"       => "Compare Models",
-       "desc"        => "Run the same prompt across multiple AI models side by side and score their outputs.",
-       "status"      => "Active",
-       "badge_class" => "bg-success",
-   ],
-   [
-       "href"        => "pages/image_to_prompt.php",
-       "icon"        => "🔍",
-       "title"       => "Image-to-Prompt",
-       "desc"        => "Upload an image and let the system reverse-engineer a descriptive prompt you can save and reuse.",
-       "status"      => "Active",
-       "badge_class" => "bg-success",
-   ],
+    [
+        "href"        => "pages/compare_models.php",
+        "icon"        => "bi-columns-gap",
+        "title"       => "Compare Models",
+        "desc"        => "Run the same prompt across multiple AI models side by side and score their outputs.",
+        "status"      => "Active",
+        "badge_class" => "bg-success",
+    ],
+    [
+        "href"        => "pages/image_to_prompt.php",
+        "icon"        => "bi-camera",
+        "title"       => "Image-to-Prompt",
+        "desc"        => "Upload an image and let the system reverse-engineer a descriptive prompt you can save and reuse.",
+        "status"      => "Active",
+        "badge_class" => "bg-success",
+    ],
 ];
 ?>
 <!DOCTYPE html>
@@ -121,7 +121,8 @@ $sections = [
     <div class="hero-card text-center mb-5">
 
         <h1 class="hero-title">
-            🖼 Image Prompt Manager
+            <i class="bi bi-image me-2"></i>
+            Image Prompt Manager
         </h1>
 
         <p class="hero-subtitle mt-3">
@@ -157,7 +158,7 @@ $sections = [
         <div class="stats-card">
 
             <div class="stats-icon">
-                📚
+                <i class="bi bi-collection"></i>
             </div>
 
             <div class="stats-number">
@@ -178,7 +179,7 @@ $sections = [
         <div class="stats-card">
 
             <div class="stats-icon">
-                🖼️
+                <i class="bi bi-image"></i>
             </div>
 
             <div class="stats-number">
@@ -199,7 +200,7 @@ $sections = [
         <div class="stats-card">
 
             <div class="stats-icon">
-                ⭐
+                <i class="bi bi-star-fill"></i>
             </div>
 
             <div class="stats-number">
@@ -220,7 +221,7 @@ $sections = [
         <div class="stats-card">
 
             <div class="stats-icon">
-                🤖
+                <i class="bi bi-cpu"></i>
             </div>
 
             <div class="stats-number">
@@ -261,7 +262,9 @@ $sections = [
                 <div class="card h-100 shadow-sm border-0 hover-card">
                     <div class="card-body">
                         <div class="d-flex justify-content-between align-items-start mb-2">
-                            <span class="feature-icon"><?php echo $section['icon']; ?></span>
+                            <span class="feature-icon">
+                                <i class="bi <?php echo $section['icon']; ?>"></i>
+                            </span>
                             <span class="badge <?php echo $section['badge_class']; ?>">
                                 <?php echo $section['status']; ?>
                             </span>

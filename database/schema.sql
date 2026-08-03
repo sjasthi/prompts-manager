@@ -1,4 +1,0 @@
--- schema.sql
--- Database schema for Prompts Manager
--- TODO: Full schema being handled by Sitra (upon receiving permissions)
--- Tables will include: prompts, generated_images, model_comparisons, reverse_prompts

@@ -120,32 +120,47 @@ $sections = [
     <!-- Header -->
     <div class="hero-card text-center mb-5">
 
+        <div class="hero-logo" aria-hidden="true">
+
+            <div class="hero-logo-symbol">
+                <i class="bi bi-stars"></i>
+            </div>
+
+            <span>IPM</span>
+
+        </div>
+
         <h1 class="hero-title">
-            <i class="bi bi-image me-2"></i>
             Image Prompt Manager
         </h1>
 
-        <p class="hero-subtitle mt-3">
+        <p class="hero-tagline">
+            Your AI image prompt workspace
+        </p>
 
-            Generate, organize, version, and compare AI image prompts
-            from one central workspace.
+        <p class="hero-subtitle">
+
+            Create reusable prompts, generate original images,
+            compare AI models, and organize your favorite results.
 
         </p>
 
     <div class="mt-4">
 
-        <a href="generate.php"
-           class="btn btn-primary btn-lg quick-btn me-3">
-
-            🎨 Generate Images
-
+        <a
+            href="generate.php"
+            class="btn btn-primary btn-lg quick-btn me-3"
+        >
+            <i class="bi bi-stars me-2"></i>
+            Generate Images
         </a>
 
-        <a href="pages/prompt_library.php"
-           class="btn btn-outline-dark btn-lg quick-btn">
-
-            📚 Prompt Library
-
+        <a
+            href="pages/prompt_library.php"
+            class="btn btn-outline-primary btn-lg quick-btn"
+        >
+            <i class="bi bi-collection me-2"></i>
+            Prompt Library
         </a>
 
     </div>

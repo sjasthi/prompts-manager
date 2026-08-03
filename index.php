@@ -168,86 +168,130 @@ $sections = [
 
 <div class="row g-4 mb-5">
 
+    <!-- Active Prompts -->
     <div class="col-sm-6 col-lg-3">
 
-        <div class="stats-card">
+        <a
+            href="pages/prompt_library.php"
+            class="stats-link"
+        >
+            <div class="stats-card">
 
-            <div class="stats-icon">
-                <i class="bi bi-collection"></i>
+                <div class="stats-icon">
+                    <i class="bi bi-collection"></i>
+                </div>
+
+                <div class="stats-number">
+                    <?php echo number_format($promptCount); ?>
+                </div>
+
+                <div class="stats-label">
+                    Active Prompts
+                </div>
+
+                <div class="stats-action">
+                    View Library
+                    <i class="bi bi-arrow-right"></i>
+                </div>
+
             </div>
-
-            <div class="stats-number">
-                <?php echo number_format($promptCount); ?>
-            </div>
-
-            <div class="stats-label">
-                Active Prompts
-            </div>
-
-        </div>
+        </a>
 
     </div>
 
 
+    <!-- Generated Images -->
     <div class="col-sm-6 col-lg-3">
 
-        <div class="stats-card">
+        <a
+            href="generate.php#previousGenerations"
+            class="stats-link"
+        >
+            <div class="stats-card">
 
-            <div class="stats-icon">
-                <i class="bi bi-image"></i>
+                <div class="stats-icon">
+                    <i class="bi bi-image"></i>
+                </div>
+
+                <div class="stats-number">
+                    <?php echo number_format($imageCount); ?>
+                </div>
+
+                <div class="stats-label">
+                    Images Generated
+                </div>
+
+                <div class="stats-action">
+                    View Gallery
+                    <i class="bi bi-arrow-right"></i>
+                </div>
+
             </div>
-
-            <div class="stats-number">
-                <?php echo number_format($imageCount); ?>
-            </div>
-
-            <div class="stats-label">
-                Images Generated
-            </div>
-
-        </div>
+        </a>
 
     </div>
 
 
+    <!-- Favorite Images -->
     <div class="col-sm-6 col-lg-3">
 
-        <div class="stats-card">
+        <a
+            href="generate.php?favorites=1#previousGenerations"
+            class="stats-link"
+        >
+            <div class="stats-card">
 
-            <div class="stats-icon">
-                <i class="bi bi-star-fill"></i>
+                <div class="stats-icon">
+                    <i class="bi bi-star-fill"></i>
+                </div>
+
+                <div class="stats-number">
+                    <?php echo number_format($favoriteCount); ?>
+                </div>
+
+                <div class="stats-label">
+                    Favorite Images
+                </div>
+
+                <div class="stats-action">
+                    View Favorites
+                    <i class="bi bi-arrow-right"></i>
+                </div>
+
             </div>
-
-            <div class="stats-number">
-                <?php echo number_format($favoriteCount); ?>
-            </div>
-
-            <div class="stats-label">
-                Favorite Images
-            </div>
-
-        </div>
+        </a>
 
     </div>
 
 
+    <!-- AI Models -->
     <div class="col-sm-6 col-lg-3">
 
-        <div class="stats-card">
+        <a
+            href="pages/compare_models.php"
+            class="stats-link"
+        >
+            <div class="stats-card">
 
-            <div class="stats-icon">
-                <i class="bi bi-cpu"></i>
+                <div class="stats-icon">
+                    <i class="bi bi-cpu"></i>
+                </div>
+
+                <div class="stats-number">
+                    <?php echo number_format($modelCount); ?>
+                </div>
+
+                <div class="stats-label">
+                    AI Models Used
+                </div>
+
+                <div class="stats-action">
+                    Compare Models
+                    <i class="bi bi-arrow-right"></i>
+                </div>
+
             </div>
-
-            <div class="stats-number">
-                <?php echo number_format($modelCount); ?>
-            </div>
-
-            <div class="stats-label">
-                AI Models Used
-            </div>
-
-        </div>
+        </a>
 
     </div>
 

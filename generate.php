@@ -1081,16 +1081,15 @@ $conn->close();
 
 
 
-<div class="card generator-card mt-4">
+<div id="previousGenerations" class="card generator-card mt-4">
 
     <div class="card-body">
 
         <div class="d-flex justify-content-between align-items-center mb-4">
 
             <h3 class="mb-0">
-
-                🖼 Previous Generations
-
+                <i class="bi bi-images me-2"></i>
+                Previous Generations
             </h3>
 
             <span class="badge bg-secondary">

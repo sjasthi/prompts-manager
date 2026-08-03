@@ -392,6 +392,49 @@ body{
     font-weight:500;
 }
 
+.stats-link{
+    display:block;
+    height:100%;
+
+    color:inherit;
+    text-decoration:none;
+}
+
+.stats-link:hover{
+    color:inherit;
+}
+
+.stats-card{
+    cursor:pointer;
+}
+
+.stats-card:hover .stats-icon{
+    transform:scale(1.1);
+}
+
+.stats-icon{
+    transition:transform .2s ease;
+}
+
+.stats-action{
+    margin-top:14px;
+
+    color:#4f46e5;
+
+    font-size:.85rem;
+    font-weight:600;
+
+    opacity:.75;
+
+    transition:
+            opacity .2s ease,
+            transform .2s ease;
+}
+
+.stats-card:hover .stats-action{
+    opacity:1;
+    transform:translateX(3px);
+}
 
 /* =========================================================
    Homepage Feature Section

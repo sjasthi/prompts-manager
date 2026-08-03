@@ -1492,105 +1492,122 @@ $conn->close();
 
 
 <!-- Previous Image Preview Modal -->
-
 <div class="modal fade" id="historyModal" tabindex="-1">
 
-    <div class="modal-dialog modal-fullscreen modal-dialog-centered">
+    <div class="modal-dialog modal-fullscreen">
 
         <div class="modal-content bg-dark border-0">
 
             <div class="modal-header border-0">
 
-                <h5 class="modalTitle text-white">
-
+                <h5 class="modal-title text-white">
                     Previous Generation
-
                 </h5>
 
                 <button
-                        type="button"
-                        class="btn-close btn-close-white"
-                        data-bs-dismiss="modal">
-                </button>
+                    type="button"
+                    class="btn-close btn-close-white"
+                    data-bs-dismiss="modal"
+                    aria-label="Close"
+                ></button>
 
             </div>
 
-            <div class="modal-body position-relative text-center p-0">
+            <div class="modal-body history-modal-body">
 
-                <!-- Previous -->
+                <div class="history-viewer">
 
-                <button
+                    <button
+                        type="button"
                         id="prevImage"
-                        class="btn btn-light position-absolute top-50 start-0 translate-middle-y ms-3 rounded-circle opacity-50"
-                        style="width:60px;height:60px;font-size:30px;z-index:1000;"
-                >
+                        class="btn btn-light history-arrow history-arrow-left"
+                        aria-label="Previous image"
+                    >
+                        ❮
+                    </button>
 
-                    ❮
+                    <div class="history-image-area">
 
-                </button>
+                        <img
+                            id="historyPreview"
+                            src=""
+                            alt="History Preview"
+                        >
 
-                <!-- Image -->
+                    </div>
 
-                <img
-                    id="historyPreview"
-                    class="rounded"
-                    src=""
-                    alt="History Preview"
-                    style="
-                        max-width:100%;
-                        max-height:100%;
-                        object-fit:contain;;
-                        background:#111;
-                    "
-                >
-
-                <div class="text-white mt-4">
-
-                    <h3 id="modalTitle"></h3>
-
-                    <p id="modalModel" class="mb-1"></p>
-
-                    <small id="modalDate" class="text-light"></small>
+                    <button
+                        type="button"
+                        id="nextImage"
+                        class="btn btn-light history-arrow history-arrow-right"
+                        aria-label="Next image"
+                    >
+                        ❯
+                    </button>
 
                 </div>
-            <div class="d-flex justify-content-center flex-wrap gap-2 mt-4">
 
-                <a
-                    id="modalDownload"
-                    href="#"
-                    download
-                    class="btn btn-success"
-                >
-                    ⬇ Download
-                </a>
+                <div class="history-details text-white">
 
-               <button
-                   id="modalFavorite"
-                   class="btn btn-warning"
-               >
-                   ⭐ Favorite
-               </button>
+                    <h3
+                        id="modalTitle"
+                        class="history-modal-title"
+                    ></h3>
 
-                <button
-                    id="modalDelete"
-                    class="btn btn-danger"
-                >
-                    🗑 Delete
-                </button>
+                    <div class="history-meta">
 
-            </div>
+                        <span id="modalModel"></span>
 
-                <!-- Next -->
+                        <span class="history-meta-separator">
+                            •
+                        </span>
 
-                <button
-                        id="nextImage"
-                        class="btn btn-light position-absolute top-50 end-0 translate-middle-y me-3 rounded-circle opacity-50"
-                        style="width:60px;height:60px;font-size:30px;z-index:1000;"
-                >
+                        <span id="modalDate"></span>
 
-                    ❯
+                    </div>
 
-                </button>
+                    <div
+                        id="modalCounter"
+                        class="history-counter"
+                    ></div>
+
+                    <div
+                        id="galleryPageMessage"
+                        class="alert alert-info py-2 mt-2 mb-0 mx-auto d-none"
+                    ></div>
+
+                    <div class="history-actions">
+
+                        <a
+                            id="modalDownload"
+                            href="#"
+                            download
+                            class="btn btn-success"
+                        >
+                            <i class="bi bi-download"></i>
+                            Download
+                        </a>
+
+                        <button
+                            type="button"
+                            id="modalFavorite"
+                            class="btn btn-warning"
+                        >
+                            Favorite
+                        </button>
+
+                        <button
+                            type="button"
+                            id="modalDelete"
+                            class="btn btn-danger"
+                        >
+                            <i class="bi bi-trash"></i>
+                            Delete
+                        </button>
+
+                    </div>
+
+                </div>
 
             </div>
 
@@ -1648,6 +1665,19 @@ function showHistoryImage(index){
 
     currentImage = index;
 
+    const message = document.getElementById("galleryPageMessage");
+
+    if(message){
+        message.classList.add("d-none");
+    }
+
+    document.getElementById("modalCounter").textContent =
+        "Image " +
+        (currentImage + 1) +
+        " of " +
+        galleryImages.length +
+        " — Page <?= $page ?> of <?= $totalPages ?>";
+
     const preview = document.getElementById("historyPreview");
 
     preview.style.opacity = "0.3";
@@ -1693,29 +1723,80 @@ function showHistoryImage(index){
 
 document.getElementById("prevImage").onclick = function(){
 
-    currentImage--;
+    if(currentImage === 0){
 
-    if(currentImage < 0){
+        showPageBoundaryMessage("This is the first image on this page.");
 
-        currentImage = galleryImages.length - 1;
+        return;
 
     }
 
-    showHistoryImage(currentImage);
+    showHistoryImage(currentImage - 1);
 
 };
 
 document.getElementById("nextImage").onclick = function(){
 
-    currentImage++;
+    if(currentImage === galleryImages.length - 1){
 
-    if(currentImage >= galleryImages.length){
+        showPageBoundaryMessage(
+            "This is the last image on this page. Close the viewer and use Next Page to continue."
+        );
 
-        currentImage = 0;
+        return;
 
     }
 
-    showHistoryImage(currentImage);
+    showHistoryImage(currentImage + 1);
+
+};
+
+function showPageBoundaryMessage(message){
+
+    const messageBox =
+        document.getElementById("galleryPageMessage");
+
+    messageBox.textContent = message;
+
+    messageBox.classList.remove("d-none");
+
+    clearTimeout(messageBox.hideTimer);
+
+    messageBox.hideTimer = setTimeout(function(){
+
+        messageBox.classList.add("d-none");
+
+    }, 3500);
+
+}
+
+document.getElementById("prevImage").onclick = function(){
+
+    if(currentImage === 0){
+
+        showPageBoundaryMessage(
+            "This is the first image on page <?= $page ?>."
+        );
+
+        return;
+    }
+
+    showHistoryImage(currentImage - 1);
+
+};
+
+document.getElementById("nextImage").onclick = function(){
+
+    if(currentImage === galleryImages.length - 1){
+
+        showPageBoundaryMessage(
+            "This is the last image on page <?= $page ?>. Close the viewer and use Next Page to continue."
+        );
+
+        return;
+    }
+
+    showHistoryImage(currentImage + 1);
 
 };
 

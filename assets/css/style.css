@@ -253,3 +253,343 @@ body{
     color:#2563eb !important;
     font-weight:600;
 }
+
+/* Responsive sizing across laptops, desktops, tablets, and phones */
+
+html{
+    font-size:16px;
+}
+
+body{
+    overflow-x:hidden;
+}
+
+.container,
+.page-wrapper{
+    width:100%;
+}
+
+.hero-card{
+    padding:clamp(28px, 5vw, 60px);
+}
+
+.hero-title{
+    font-size:clamp(2rem, 4vw, 3rem);
+}
+
+.hero-subtitle{
+    font-size:clamp(1rem, 2vw, 1.2rem);
+}
+
+.page-card{
+    padding:clamp(22px, 4vw, 40px);
+}
+
+.page-title{
+    font-size:clamp(1.8rem, 3vw, 2.3rem);
+}
+
+.feature-icon{
+    font-size:clamp(2rem, 4vw, 3rem);
+}
+
+.stats-number{
+    font-size:clamp(1.5rem, 3vw, 2rem);
+}
+
+.quick-btn{
+    padding:clamp(10px, 2vw, 14px) clamp(18px, 3vw, 30px);
+}
+
+.generated-image{
+    width:100%;
+    max-width:650px;
+    max-height:70vh;
+    object-fit:contain;
+}
+
+.model-image{
+    width:100%;
+    height:clamp(260px, 45vw, 460px);
+    object-fit:contain;
+}
+
+.history-image{
+    width:100%;
+    height:clamp(180px, 25vw, 220px);
+    object-fit:cover;
+}
+
+@media (max-width: 992px){
+
+    .custom-navbar{
+        padding:12px 0;
+    }
+
+    .logo-box{
+        width:46px;
+        height:46px;
+        border-radius:12px;
+    }
+
+    .brand-title{
+        font-size:1.05rem;
+    }
+
+    .brand-subtitle{
+        font-size:.72rem;
+    }
+
+    .custom-navbar .nav-link{
+        margin-left:0;
+        margin-top:5px;
+    }
+
+    .page-wrapper{
+        margin:24px auto;
+    }
+}
+
+@media (max-width: 768px){
+
+    .hero-card,
+    .page-card{
+        border-radius:18px;
+    }
+
+    .quick-btn{
+        width:100%;
+        margin:6px 0 !important;
+    }
+
+    .stats-card{
+        min-height:140px;
+    }
+
+    .generated-image{
+        max-height:60vh;
+    }
+
+    .model-image{
+        height:300px;
+    }
+}
+
+@media (max-width: 576px){
+
+    .container{
+        padding-left:14px;
+        padding-right:14px;
+    }
+
+    .hero-title{
+        font-size:1.9rem;
+    }
+
+    .page-title{
+        font-size:1.7rem;
+    }
+
+    .hero-card,
+    .page-card{
+        padding:20px;
+    }
+
+    .stats-card{
+        padding:18px;
+    }
+
+    .history-image{
+        height:200px;
+    }
+}
+
+/* Full-screen history gallery */
+
+#historyModal .modal-content{
+    height:100dvh;
+    overflow:hidden;
+}
+
+#historyModal .modal-header{
+    flex:0 0 auto;
+    min-height:58px;
+}
+
+.history-modal-body{
+    flex:1 1 auto;
+    min-height:0;
+    display:grid;
+    grid-template-rows:minmax(0, 1fr) auto;
+    padding:0 24px 18px;
+    background:#111827;
+    overflow:hidden;
+}
+
+.history-viewer{
+    position:relative;
+    min-height:0;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    overflow:hidden;
+}
+
+.history-image-area{
+    width:100%;
+    height:100%;
+    min-height:0;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:12px 84px;
+}
+
+#historyPreview{
+    display:block;
+    width:auto;
+    height:auto;
+    max-width:100%;
+    max-height:100%;
+    object-fit:contain;
+    border-radius:12px;
+}
+
+.history-arrow{
+    position:absolute;
+    top:50%;
+    transform:translateY(-50%);
+    width:56px;
+    height:56px;
+    border-radius:50%;
+    z-index:10;
+    opacity:.72;
+    font-size:1.7rem;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+}
+
+.history-arrow:hover{
+    opacity:1;
+    transform:translateY(-50%);
+}
+
+.history-arrow-left{
+    left:16px;
+}
+
+.history-arrow-right{
+    right:16px;
+}
+
+.history-details{
+    flex:0 0 auto;
+    text-align:center;
+    padding-top:10px;
+}
+
+.history-modal-title{
+    margin:0;
+    font-size:clamp(1.1rem, 2vw, 1.6rem);
+}
+
+.history-meta{
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    flex-wrap:wrap;
+    gap:8px;
+    margin-top:4px;
+    font-size:.9rem;
+    color:#d1d5db;
+}
+
+.history-counter{
+    margin-top:4px;
+    font-size:.85rem;
+    color:#d1d5db;
+}
+
+#galleryPageMessage{
+    max-width:620px;
+    font-size:.9rem;
+}
+
+.history-actions{
+    display:flex;
+    justify-content:center;
+    flex-wrap:wrap;
+    gap:8px;
+    margin-top:10px;
+}
+
+.history-actions .btn{
+    min-width:120px;
+}
+
+@media (max-width: 768px){
+
+    .history-modal-body{
+        padding:0 12px 12px;
+    }
+
+    .history-image-area{
+        padding:8px 54px;
+    }
+
+    .history-arrow{
+        width:44px;
+        height:44px;
+        font-size:1.3rem;
+    }
+
+    .history-arrow-left{
+        left:4px;
+    }
+
+    .history-arrow-right{
+        right:4px;
+    }
+
+    .history-actions .btn{
+        min-width:auto;
+        flex:1 1 120px;
+    }
+}
+
+@media (max-height: 750px){
+
+    #historyModal .modal-header{
+        min-height:48px;
+        padding-top:8px;
+        padding-bottom:8px;
+    }
+
+    .history-modal-body{
+        padding-bottom:10px;
+    }
+
+    .history-details{
+        padding-top:6px;
+    }
+
+    .history-modal-title{
+        font-size:1.1rem;
+    }
+
+    .history-meta,
+    .history-counter{
+        font-size:.78rem;
+    }
+
+    .history-actions{
+        margin-top:6px;
+    }
+
+    .history-actions .btn{
+        padding-top:6px;
+        padding-bottom:6px;
+        font-size:.85rem;
+    }
+}

@@ -1,93 +1,17 @@
-Example:
+# Image Prompt Manager
 
-```php
-<?php
+A web application for creating, organizing, versioning, and evaluating AI image prompts — built as an ICS499 Capstone Project.
 
-define('DB_HOST', 'localhost');
-define('DB_USER', 'root');
-define('DB_PASS', 'YOUR_DATABASE_PASSWORD');
-define('DB_NAME', 'prompt_manager');
+## Prompt Library
+Browse and manage all saved image prompts. Each prompt displays its title, category, tags, version number, and creation date. Prompts can be edited or deleted directly from the library. Includes search, pagination, and column sorting by title, category, version, and date.
 
-define('CF_ACCOUNT_ID', 'YOUR_ACCOUNT_ID');
-define('CF_API_TOKEN', 'YOUR_API_TOKEN');
-```
+## Create Prompt
+Create new image prompts with a title, prompt text, category, and tags. Supports full editing with version tracking — every save logs a new version to the database. Previous versions can be viewed, restored, or deleted from the version history panel.
 
-Replace each placeholder with your own MySQL and Cloudflare credentials.
-
----
-
-## Running Locally
-From the project's root folder, start the PHP development server with:
-
-```bash
-php -d upload_max_filesize=10M -d post_max_size=12M -S localhost:8000
-```
-
----
-
-## Cloudflare AI Setup
-
-Cloudflare AI requires both an **Account ID** and an **API Token**.
-
-### Step 1
-Create a free Cloudflare account at https://dash.cloudflare.com/
-
-### Step 2
-Create an API Token with permission to use **Workers AI**.
-
-### Step 3
-Find your Account ID from the Cloudflare dashboard.
-
-### Step 4
-Open `includes/config.php` and replace the placeholders with your credentials.
-
-### Step 5
-Save the file. Cloudflare AI is now ready to use.
-
-> **Important:** Never commit your personal Cloudflare API Token or database password to GitHub. Keep `config.php` local or add it to `.gitignore`.
-
----
-
-## Image to Prompt
+## Image-to-Prompt
 Upload an image and let AI reverse-engineer a descriptive prompt from it. Uses the Cloudflare Llama Vision API (`@cf/meta/llama-3.2-11b-vision-instruct`) to analyze the image and generate a detailed, editable prompt that can be saved directly to the Prompt Library.
 
-### How to Test
-1. Open: `http://localhost:8000/pages/image_to_prompt.php`
-2. Upload a JPG, PNG, or WEBP image up to 10 MB.
-3. Click **Generate Prompt**.
-4. Review or edit the generated prompt.
-5. Click **Save Prompt** to add it to the Prompt Library.
+> ⚠️ Requires a Cloudflare account and API token with Workers AI permissions. Add your credentials to `includes/config.php` locally — never commit this file.
 
-### One-Time Cloudflare Model Agreement
-A new Cloudflare account must accept the vision model agreement before using Image to Prompt. Create a temporary `agree.php` file in the project root with the Cloudflare API call sending `"prompt" => "agree"` and run it once in the browser.
-
----
-
-## Compare Models
-Run the same prompt across multiple AI models side by side and evaluate the results.
-
-### How to Test
-1. Make sure at least one prompt exists in the Prompt Library.
-2. Open: `http://localhost:8000/pages/compare_models.php`
-3. Select a saved prompt.
-4. Click **Compare Both Models**.
-5. Review the Pollinations AI and Cloudflare AI results.
-6. Select the preferred model, add optional notes, and save the comparison.
-
-### Supported AI Models
-- Pollinations AI
-- Cloudflare Workers AI (FLUX)
-
----
-
-## Performance Improvements
-- Pagination limits the number of images loaded per page.
-- Search and filtering are performed directly by MySQL instead of PHP.
-- Images are automatically assigned searchable titles.
-- Image history is ordered by generation date for efficient retrieval.
-- Favorites and image management help users organize large collections of generated images.
-
----
-
-## Course Information
-**Course:** ICS499 – Software Engineering and Capstone Project
+## Project Course
+ICS499 — Software Engineering and Capstone Project

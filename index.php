@@ -109,12 +109,6 @@ $sections = [
 <body>
     <?php include 'includes/navbar.php'; ?>
 
-<!-- Under Development Banner -->
-<div class="alert alert-warning alert-dismissible fade show text-center rounded-0 mb-0 py-2" role="alert">
-    🚧 <strong>Under Development</strong> — This application is actively being built. Features may be incomplete or change without notice.
-    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-</div>
-
 <div class="container py-5">
 
     <!-- Header -->

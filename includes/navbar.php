@@ -1,6 +1,11 @@
 <?php
 
 $currentPage = basename($_SERVER['PHP_SELF']);
+$scriptDirectory = str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME']));
+$basePath = basename($scriptDirectory) === 'pages'
+    ? dirname($scriptDirectory)
+    : $scriptDirectory;
+$basePath = rtrim(str_replace('\\', '/', $basePath), '/');
 
 ?>
 <nav class="navbar navbar-expand-lg navbar-dark custom-navbar shadow">
@@ -8,7 +13,7 @@ $currentPage = basename($_SERVER['PHP_SELF']);
     <div class="container">
 
         <a class="navbar-brand d-flex align-items-center"
-           href="/prompts-manager/index.php">
+           href="<?= htmlspecialchars($basePath) ?>/index.php">
 
             <div class="logo-box me-3">
 
@@ -52,7 +57,7 @@ $currentPage = basename($_SERVER['PHP_SELF']);
                 <li class="nav-item">
                     <a
                         class="nav-link <?= $currentPage == 'index.php' ? 'active' : '' ?>"
-                        href="/prompts-manager/index.php"
+                        href="<?= htmlspecialchars($basePath) ?>/index.php"
                     >
                         <i class="bi bi-house-door me-1"></i>
                         Home
@@ -62,7 +67,7 @@ $currentPage = basename($_SERVER['PHP_SELF']);
                 <li class="nav-item">
                     <a
                         class="nav-link <?= $currentPage == 'prompt_library.php' ? 'active' : '' ?>"
-                        href="/prompts-manager/pages/prompt_library.php"
+                        href="<?= htmlspecialchars($basePath) ?>/pages/prompt_library.php"
                     >
                         <i class="bi bi-collection me-1"></i>
                         Prompt Library
@@ -72,7 +77,7 @@ $currentPage = basename($_SERVER['PHP_SELF']);
                 <li class="nav-item">
                     <a
                         class="nav-link <?= $currentPage == 'create_prompt.php' ? 'active' : '' ?>"
-                        href="/prompts-manager/pages/create_prompt.php"
+                        href="<?= htmlspecialchars($basePath) ?>/pages/create_prompt.php"
                     >
                         <i class="bi bi-pencil-square me-1"></i>
                         Create Prompt
@@ -82,7 +87,7 @@ $currentPage = basename($_SERVER['PHP_SELF']);
                 <li class="nav-item">
                     <a
                         class="nav-link <?= $currentPage == 'generate.php' ? 'active' : '' ?>"
-                        href="/prompts-manager/generate.php"
+                        href="<?= htmlspecialchars($basePath) ?>/generate.php"
                     >
                         <i class="bi bi-image me-1"></i>
                         Generate
@@ -95,7 +100,7 @@ $currentPage = basename($_SERVER['PHP_SELF']);
                             'compare_models.php',
                             'comparison_history.php'
                         ]) ? 'active' : '' ?>"
-                        href="/prompts-manager/pages/compare_models.php"
+                        href="<?= htmlspecialchars($basePath) ?>/pages/compare_models.php"
                     >
                         <i class="bi bi-columns-gap me-1"></i>
                         Compare
@@ -105,7 +110,7 @@ $currentPage = basename($_SERVER['PHP_SELF']);
                 <li class="nav-item">
                     <a
                         class="nav-link <?= $currentPage == 'image_to_prompt.php' ? 'active' : '' ?>"
-                        href="/prompts-manager/pages/image_to_prompt.php"
+                        href="<?= htmlspecialchars($basePath) ?>/pages/image_to_prompt.php"
                     >
                         <i class="bi bi-camera me-1"></i>
                         Image→Prompt

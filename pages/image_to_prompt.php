@@ -1,6 +1,7 @@
 <?php
 require_once '../includes/database.php';
 require_once '../includes/config.php';
+require_once '../includes/openrouter_ai.php';
 
 $conn = getConnection();
 
@@ -60,59 +61,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 $imagePreview = $targetPath;
 
-                // Convert image to base64
-                $imageData = base64_encode(file_get_contents($targetPath));
+                $analysis = analyzeImageWithOpenRouter($targetPath, $fileType);
 
-                // Call Cloudflare Llama Vision API
-                $apiUrl = "https://api.cloudflare.com/client/v4/accounts/" . CF_ACCOUNT_ID . "/ai/run/@cf/meta/llama-3.2-11b-vision-instruct";
-
-                $payload = json_encode([
-                    "max_tokens" => 512,
-                    "messages" => [
-                        [
-                            "role" => "user",
-                            "content" => [
-                                [
-                                    "type" => "image_url",
-                                    "image_url" => [
-                                        "url" => "data:" . $fileType . ";base64," . $imageData
-                                    ]
-                                ],
-                                [
-                                    "type" => "text",
-                                    "text" => "Describe this image in detail as an AI image generation prompt. Include the subject, background, lighting, colors, mood, camera angle, and visual style. Be specific and descriptive."
-                                ]
-                            ]
-                        ]
-                    ]
-                ]);
-
-                $ch = curl_init();
-                curl_setopt($ch, CURLOPT_URL, $apiUrl);
-                curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-                curl_setopt($ch, CURLOPT_POST, true);
-                curl_setopt($ch, CURLOPT_TIMEOUT, 60);
-                curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 10);
-                curl_setopt($ch, CURLOPT_HTTPHEADER, [
-                    "Authorization: Bearer " . CF_API_TOKEN,
-                    "Content-Type: application/json"
-                ]);
-                curl_setopt($ch, CURLOPT_POSTFIELDS, $payload);
-
-                $response = curl_exec($ch);
-
-                if (curl_errno($ch)) {
-                    $error = "API error: " . curl_error($ch);
+                if ($analysis['success']) {
+                    $generatedPrompt = $analysis['prompt'];
                 } else {
-                    $result = json_decode($response, true);
-                    if (isset($result['result']['response'])) {
-                        $generatedPrompt = $result['result']['response'];
-                    } else {
-                        $error = "Could not generate prompt from image. Please try again.";
-                    }
+                    $error = $analysis['error'];
                 }
-
-                curl_close($ch);
             }
         }
     }

@@ -258,7 +258,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     $model = $_POST['model'] ?? "pollinations";
 
     $stmt = $conn->prepare("
-        SELECT prompt_text
+        SELECT title, prompt_text
         FROM prompts
         WHERE prompt_id = ?
     ");
@@ -277,6 +277,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         try {
 
             $promptText = trim($promptRow['prompt_text']);
+            $promptTitle = trim($promptRow['title']);
 
             /*
             |--------------------------------------------------------------------------
@@ -323,12 +324,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
                     if ($imageData === false) {
                         throw new Exception("Unable to download image from Pollinations.");
-                    }
-
-                    if($imageData === false){
-
-                        throw new Exception("Failed to download image from Pollinations.");
-
                     }
 
                     // Make sure uploads folder exists

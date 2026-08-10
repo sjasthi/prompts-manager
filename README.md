@@ -42,21 +42,32 @@ Generated images can be searched, filtered, favorited, downloaded, and deleted d
 ---
 
 ## Configuration
-Before running the application, edit the following file:
+Create `includes/config.local.php` for local credentials. This file is ignored by Git and must never be committed.
 
 Example:
 
 ```php
 <?php
-define('DB_HOST', 'localhost');
+define('DB_HOST', '127.0.0.1');
 define('DB_USER', 'root');
 define('DB_PASS', 'YOUR_DATABASE_PASSWORD');
 define('DB_NAME', 'prompt_manager');
 define('CF_ACCOUNT_ID', 'YOUR_ACCOUNT_ID');
 define('CF_API_TOKEN', 'YOUR_API_TOKEN');
+define('OPENROUTER_API_KEY', 'YOUR_OPENROUTER_API_KEY');
 ```
 
-Replace each placeholder with your own MySQL and Cloudflare credentials.
+Replace each placeholder with your own credentials. Production deployments can provide the same names as environment variables instead of using `config.local.php`.
+
+> **Important:** Never add `config.local.php`, database passwords, or API keys to GitHub.
+
+## Database Setup
+
+Create the database and tables using the included SQL file:
+
+```bash
+/usr/local/mysql/bin/mysql -u root -p < database.sql
+```
 
 ---
 
@@ -83,17 +94,30 @@ Create an API Token with permission to use **Workers AI**.
 Find your Account ID from the Cloudflare dashboard.
 
 ### Step 4
-Open `includes/config.php` and replace the placeholders with your credentials.
+Add the credentials to `includes/config.local.php`.
 
 ### Step 5
 Save the file. Cloudflare AI is now ready to use.
 
-> **Important:** Never commit your personal Cloudflare API Token or database password to GitHub. Keep `config.php` local or add it to `.gitignore`.
+Cloudflare Workers AI powers the Cloudflare FLUX option on the Generate and Compare pages.
+
+---
+
+## OpenRouter Setup
+
+OpenRouter powers the Image-to-Prompt feature using the free models router.
+
+1. Create or sign in to an account at https://openrouter.ai/.
+2. Create an API key named **Image Prompt Manager**.
+3. Add the key as `OPENROUTER_API_KEY` in `includes/config.local.php`.
+4. Keep the key private and never commit it to GitHub.
+
+The `openrouter/free` router does not charge for model inference, but free models can have lower rate limits or temporary availability limits.
 
 ---
 
 ## Image to Prompt
-Upload an image and let AI reverse-engineer a descriptive prompt from it. Uses the Cloudflare Llama Vision API (`@cf/meta/llama-3.2-11b-vision-instruct`) to analyze the image and generate a detailed, editable prompt that can be saved directly to the Prompt Library.
+Upload an image and let AI reverse-engineer a descriptive prompt from it. The feature sends the image to OpenRouter's `openrouter/free` router, which selects an available vision-capable model. The detailed, editable prompt can then be saved directly to the Prompt Library.
 
 ### How to Test
 1. Open: `http://localhost:8000/pages/image_to_prompt.php`
@@ -101,11 +125,6 @@ Upload an image and let AI reverse-engineer a descriptive prompt from it. Uses t
 3. Click **Generate Prompt**.
 4. Review or edit the generated prompt.
 5. Click **Save Prompt** to add it to the Prompt Library.
-
-### One-Time Cloudflare Model Agreement
-A new Cloudflare account must accept the vision model agreement before using Image to Prompt. Create a temporary `agree.php` file in the project root with the Cloudflare API call sending `"prompt" => "agree"` and run it once in the browser.
-
----
 
 ## Compare Models
 Run the same prompt across multiple AI models side by side and evaluate the results.

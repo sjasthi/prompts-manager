@@ -63,11 +63,9 @@ Replace each placeholder with your own credentials. Production deployments can p
 
 ## Database Setup
 
-Create the database and tables using the included SQL file:
+Create the MySQL database and tables using the included `database.sql` file.
 
-```bash
-/usr/local/mysql/bin/mysql -u root -p < database.sql
-```
+The SQL file can be imported using MySQL Workbench, phpMyAdmin, or the MySQL command line.
 
 ---
 
@@ -105,26 +103,35 @@ Cloudflare Workers AI powers the Cloudflare FLUX option on the Generate and Comp
 
 ## OpenRouter Setup
 
-OpenRouter powers the Image-to-Prompt feature using the free models router.
+OpenRouter powers the Image-to-Prompt feature using Google's Gemma 4 26B multimodal model.
 
 1. Create or sign in to an account at https://openrouter.ai/.
 2. Create an API key named **Image Prompt Manager**.
 3. Add the key as `OPENROUTER_API_KEY` in `includes/config.local.php`.
 4. Keep the key private and never commit it to GitHub.
 
-The `openrouter/free` router does not charge for model inference, but free models can have lower rate limits or temporary availability limits.
+The Image-to-Prompt feature currently uses the `google/gemma-4-26b-a4b-it:free` model through OpenRouter. This multimodal model can analyze uploaded images and return text descriptions that are converted into reusable AI image prompts.
+
+Because the application uses the free version of the model, response times and availability may vary depending on provider traffic and rate limits.
 
 ---
 
 ## Image to Prompt
-Upload an image and let AI reverse-engineer a descriptive prompt from it. The feature sends the image to OpenRouter's `openrouter/free` router, which selects an available vision-capable model. The detailed, editable prompt can then be saved directly to the Prompt Library.
+
+Upload an image and let AI reverse-engineer a descriptive prompt from it. The feature sends the uploaded image to OpenRouter, where Google's Gemma 4 26B multimodal model analyzes the image and generates a detailed text prompt.
+
+The generated prompt includes details such as the subject, setting, composition, lighting, colors, mood, and visual style. Users can review and edit the generated prompt before saving it directly to the Prompt Library.
+
+A loading indicator is displayed while the image is being analyzed because processing time may vary when using the external AI service.
 
 ### How to Test
+
 1. Open: `http://localhost:8000/pages/image_to_prompt.php`
 2. Upload a JPG, PNG, or WEBP image up to 10 MB.
 3. Click **Generate Prompt**.
-4. Review or edit the generated prompt.
-5. Click **Save Prompt** to add it to the Prompt Library.
+4. Wait for the AI to analyze the uploaded image.
+5. Review or edit the generated prompt.
+6. Click **Save Prompt** to add it to the Prompt Library.
 
 ## Compare Models
 Run the same prompt across multiple AI models side by side and evaluate the results.
